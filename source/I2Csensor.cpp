@@ -5,6 +5,8 @@
  */
 
 #include "I2Csensor.hpp"
+#define BUFFER_I2CREAD_BLOCK(regpage,regfirst,reglast) this->I2Cread(regfirst, &(this->DataBuffer[(regpage*I2C_BUFFER_PAGESIZE) +regfirst]), (reglast-regfirst) +1)
+#define BUFFER_REGISTER(regpage,regaddr) (this->DataBuffer[((regpage*I2C_BUFFER_PAGESIZE) +regaddr)])
 
 #include <cstdio>
 #include <cstdlib>
@@ -305,7 +307,8 @@ namespace rpiScope
 		while(0 < togo)
 		{
 			int rbytes = 0;
-			if(0 > (rbytes = i2c_smbus_read_i2c_block_data(this->fdbus, address, togo, pos)))
+			//	limit read to 32 Bytes, to comply with SMBus
+			if(0 > (rbytes = i2c_smbus_read_i2c_block_data(this->fdbus, address, (32<togo ?32 :togo), pos)))
 			{
 				perror("i2c_smbus_read_i2c_block_data failed");
 				break;
@@ -418,20 +421,46 @@ namespace rpiScope
 		if(I2C_LSM9DS1 == this->sensortype)
 		{
 			this->I2Cselect(this->i2caddress_acc);
-			this->I2Cread(0x04, &(this->DataBuffer[(0*I2C_BUFFER_PAGESIZE) +0x04]), 0x0D-0x04 +1);	// 00-03=reserved
-			this->I2Cread(0x0F, &(this->DataBuffer[(0*I2C_BUFFER_PAGESIZE) +0x0F]), 0x17-0x0F +1);	// 0E=reserved
-			this->I2Cread(0x18, &(this->DataBuffer[(0*I2C_BUFFER_PAGESIZE) +0x18]), 0x1D-0x18 +1);
-			this->I2Cread(0x1E, &(this->DataBuffer[(0*I2C_BUFFER_PAGESIZE) +0x1E]), 0x24-0x1E +1);
-			this->I2Cread(0x26, &(this->DataBuffer[(0*I2C_BUFFER_PAGESIZE) +0x26]), 0x27-0x26 +1);	// 25=reserved
-			this->I2Cread(0x28, &(this->DataBuffer[(0*I2C_BUFFER_PAGESIZE) +0x28]), 0x2D-0x28 +1);
-			this->I2Cread(0x2E, &(this->DataBuffer[(0*I2C_BUFFER_PAGESIZE) +0x2E]), 0x37-0x2E +1);	// 38-7F=reserved
+			BUFFER_I2CREAD_BLOCK(0,0x04,0x0D);
+			BUFFER_I2CREAD_BLOCK(0,0x18,0x1D);	// gyro, should restart at 0x18 afterwards
+			BUFFER_I2CREAD_BLOCK(0,0x1E,0x24);
+			BUFFER_I2CREAD_BLOCK(0,0x26,0x27);
+			BUFFER_I2CREAD_BLOCK(0,0x28,0x2D);	// acc, should restart at 0x28 afterwards
+			BUFFER_I2CREAD_BLOCK(0,0x2E,0x37);
 			this->I2Cselect(this->i2caddress_mag);
-			this->I2Cread(0x05, &(this->DataBuffer[(1*I2C_BUFFER_PAGESIZE) +0x05]), 0x0A-0x05 +1);	// 00-04=reserved
-			this->I2Cread(0x0F, &(this->DataBuffer[(1*I2C_BUFFER_PAGESIZE) +0x0F]), 0x0F-0x0F +1);	// 0B-0E=reserved
-			this->I2Cread(0x20, &(this->DataBuffer[(1*I2C_BUFFER_PAGESIZE) +0x20]), 0x24-0x20 +1);	// 10-1F=reserved
-			this->I2Cread(0x27, &(this->DataBuffer[(1*I2C_BUFFER_PAGESIZE) +0x27]), 0x27-0x27 +1);	// 25-26=reserved
-			this->I2Cread(0x28, &(this->DataBuffer[(1*I2C_BUFFER_PAGESIZE) +0x28]), 0x2D-0x28 +1);
-			this->I2Cread(0x30, &(this->DataBuffer[(1*I2C_BUFFER_PAGESIZE) +0x30]), 0x33-0x30 +1);	// 2E-2F,34-7F=reserved
+			BUFFER_I2CREAD_BLOCK(1,0x05,0x0A);
+			BUFFER_I2CREAD_BLOCK(1,0x0F,0x0F);
+			BUFFER_I2CREAD_BLOCK(1,0x20,0x24);
+			BUFFER_I2CREAD_BLOCK(1,0x27,0x27);
+			BUFFER_I2CREAD_BLOCK(1,0x28,0x2D);	// mag, should restart at 0x28 afterwards
+			BUFFER_I2CREAD_BLOCK(1,0x30,0x33);
+			//	set full scale
+			float gyro = 1.0;	// dps/LSB
+			if(0b00000000 == (BUFFER_REGISTER(0,0x10) &0b00011000))
+				gyro = 0.00875;//245.0/32768;
+			else if(0b00001000 == (BUFFER_REGISTER(0,0x10) &0b00011000))
+				gyro = 0.01750;//500.0/32768;
+			else if(0b00011000 == (BUFFER_REGISTER(0,0x10) &0b00011000))
+				gyro = 0.07;//2000.0/32768;
+			float acc = 1.0;	// G/LSB
+			if(0b00000000 == (BUFFER_REGISTER(0,0x20) &0b00011000))
+				acc = 0.000061;//2.0/32768;
+			else if(0b00001000 == (BUFFER_REGISTER(0,0x20) &0b00011000))
+				acc = 0.000732;//16.0/32768;
+			else if(0b00010000 == (BUFFER_REGISTER(0,0x20) &0b00011000))
+				acc = 0.000122;//4.0/32768;
+			else if(0b00011000 == (BUFFER_REGISTER(0,0x20) &0b00011000))
+				acc = 0.000244;//8.0/32768;
+			float mag = 1.0;	// gauss/LSB
+			if(0b00000000 == (BUFFER_REGISTER(1,0x21) &0b01100000))
+				mag = 0.00014;//4.0/32768;
+			else if(0b00100000 == (BUFFER_REGISTER(1,0x21) &0b01100000))
+				mag = 0.00029;//8.0/32768;
+			else if(0b01000000 == (BUFFER_REGISTER(1,0x21) &0b01100000))
+				mag = 0.00043;//12.0/32768;
+			else if(0b01100000 == (BUFFER_REGISTER(1,0x21) &0b01100000))
+				mag = 0.00058;//16.0/32768;
+			this->IMUvalue.SetFullScale(gyro, acc, mag);
 		}
 		else if(I2C_BNO055 == this->sensortype)
 		{
@@ -463,22 +492,26 @@ namespace rpiScope
 		if(I2C_LSM9DS1 == this->sensortype)
 		{
 			this->I2Cselect(this->i2caddress_acc);
-			this->I2Cread(0x18, &(this->DataBuffer[(0*I2C_BUFFER_PAGESIZE) +0x18]), 0x1D-0x18 +1);	//	gyro
+			BUFFER_I2CREAD_BLOCK(0,0x18,0x1D);	// should restart at 0x18 afterwards
 			X = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x19)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x18)]);
 			Y = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1B)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1A)]);
 			Z = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1D)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1C)]);
 			this->IMUvalue.PushGyroscope(X,Y,Z);
-			this->I2Cread(0x28, &(this->DataBuffer[(0*I2C_BUFFER_PAGESIZE) +0x28]), 0x2D-0x28 +1);	//	acc
+			BUFFER_I2CREAD_BLOCK(0,0x28,0x2D);	// should restart at 0x28 afterwards
 			X = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x29)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x28)]);
 			Y = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2B)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2A)]);
 			Z = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2D)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2C)]);
 			this->IMUvalue.PushAcceleration(X,Y,Z);
 			this->I2Cselect(this->i2caddress_mag);
-			this->I2Cread(0x28, &(this->DataBuffer[(1*I2C_BUFFER_PAGESIZE) +0x28]), 0x2D-0x28 +1);	//	mag
+			BUFFER_I2CREAD_BLOCK(1,0x28,0x2D);	// should restart at 0x28 afterwards
 			X = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x29)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x28)]);
 			Y = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2B)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2A)]);
 			Z = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2D)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2C)]);
 			this->IMUvalue.PushMagnetometer(X,Y,Z);
+		}
+		else if(I2C_BNO055 == this->sensortype)
+		{
+			this->I2Cread2buffer();
 		}
 		else
 		{
@@ -776,6 +809,10 @@ namespace rpiScope
 
 	void I2Csensor::pthread_I2Creading(void)
 	{
+#		ifdef DEBUG2
+		//	function, step, extra
+		printf("\t%s\t%s\t%s\n", "pthread_I2Creading", "starting", "");
+#		endif
 		//	clear stop flag
 		this->pthread_stopping = false;
 		//	prepare thread attributes
@@ -794,6 +831,10 @@ namespace rpiScope
 	}
 	void I2Csensor::pthread_stopp(void)
 	{
+#		ifdef DEBUG2
+		//	function, step, extra
+		printf("\t%s\t%s\t%s\n", "pthread_stopp", "starting", "");
+#		endif
 		//	set stopp flags
 		this->pthread_stopping = true;
 		//	destroy attribute
@@ -804,6 +845,10 @@ namespace rpiScope
 
 	void *pthread_DataReading(void *data)
 	{
+#		ifdef DEBUG2
+		//	function, step, extra
+		printf("\t%s\t%s\t%s\n", "pthread_DataReading", "starting", "");
+#		endif
 		I2Csensor* mother = (I2Csensor*)data;
 		printf("starting sensor reading (G=%02X, A=%02X, M=%02X)\n", mother->i2caddress_gyro,mother->i2caddress_acc,mother->i2caddress_mag);
 		//	start preparation
@@ -821,6 +866,9 @@ namespace rpiScope
 			if(0 == (read_counter++ &0x3F))
 			{
 				mother->I2Cread2buffer();
+#				if defined(DEBUG3)
+				mother->DebugDataBuffer();
+#				endif
 			}
 			else
 			{
@@ -828,7 +876,26 @@ namespace rpiScope
 			}
 			usleep(1000000 >>5);	//	32Hz reading
 		}
+#		ifdef DEBUG2
+		//	function, step, extra
+		printf("\t%s\t%s\t%s\n", "pthread_DataReading", "stopping", "");
+#		endif
 		pthread_exit(NULL);
+	}
+
+	void I2Csensor::DebugDataBuffer(void)
+	{
+		for(int page=0; 2>page; ++page)
+		{
+			for(int line=0x00; 0x80>line; line+=0x10)
+			{
+				fprintf(stderr, "  %d %02X\t%02X %02X %02X %02X %02X %02X %02X %02X  %02X %02X %02X %02X %02X %02X %02X %02X\n", page, line
+					,BUFFER_REGISTER(page,line+0x00),BUFFER_REGISTER(page,line+0x01),BUFFER_REGISTER(page,line+0x02),BUFFER_REGISTER(page,line+0x03)
+					,BUFFER_REGISTER(page,line+0x04),BUFFER_REGISTER(page,line+0x05),BUFFER_REGISTER(page,line+0x06),BUFFER_REGISTER(page,line+0x07)
+					,BUFFER_REGISTER(page,line+0x08),BUFFER_REGISTER(page,line+0x09),BUFFER_REGISTER(page,line+0x0A),BUFFER_REGISTER(page,line+0x0B)
+					,BUFFER_REGISTER(page,line+0x0C),BUFFER_REGISTER(page,line+0x0D),BUFFER_REGISTER(page,line+0x0E),BUFFER_REGISTER(page,line+0x0F));
+			}
+		}
 	}
 
 };

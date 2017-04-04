@@ -59,13 +59,12 @@ int main(int argc, char* argv[], char* envp[])
 		return 127;
 	}
 #	else
-	// SIGPIPE is normal operation when we send while the other side
-	// has already closed the socket. We must ignore it:
+	//	ignore SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);
 	signal(SIGQUIT, signal_handler);
-	// maybe the user wants to continue after SIGHUP ?
+	//	?keep running after SIGHUP
 	//signal(SIGHUP,signal_handler);
 #	endif
 
@@ -80,10 +79,23 @@ int main(int argc, char* argv[], char* envp[])
 		rpiScope::IMU_Vector*	Acceleration = imu.IMUvalue.Acceleration();
 		rpiScope::IMU_Vector*	Gyroscope = imu.IMUvalue.Gyroscope();
 		rpiScope::IMU_Vector*	Magnetometer = imu.IMUvalue.Magnetometer();
+#		if defined(DEBUG3)
 		std::cout << "\t" << "a=" << Acceleration->X << "," << Acceleration->Y << "," << Acceleration->Z
-			<< "\t" << "g=" << Gyroscope->X << "," << Gyroscope->Y << "," << Gyroscope->Z
-			<< "\t" << "m=" << Magnetometer->X << "," << Magnetometer->Y << "," << Magnetometer->Z
+			<< "\t" << "a=" << Acceleration->scaledX() << "," << Acceleration->scaledY() << "," << Acceleration->scaledZ()
 			<< std::endl;
+		std::cout << "\t" << "g=" << Gyroscope->X << "," << Gyroscope->Y << "," << Gyroscope->Z
+			<< "\t" << "g=" << Gyroscope->scaledX() << "," << Gyroscope->scaledY() << "," << Gyroscope->scaledZ()
+			<< std::endl;
+		std::cout << "\t" << "m=" << Magnetometer->X << "," << Magnetometer->Y << "," << Magnetometer->Z
+			<< "\t" << "m=" << Magnetometer->scaledX() << "," << Magnetometer->scaledY() << "," << Magnetometer->scaledZ()
+			<< std::endl;
+#		else
+		std::cout
+			<< "\t" << "a=" << Acceleration->scaledX() << "," << Acceleration->scaledY() << "," << Acceleration->scaledZ()
+			<< "\t" << "g=" << Gyroscope->scaledX() << "," << Gyroscope->scaledY() << "," << Gyroscope->scaledZ()
+			<< "\t" << "m=" << Magnetometer->scaledX() << "," << Magnetometer->scaledY() << "," << Magnetometer->scaledZ()
+			<< std::endl;
+#		endif
 		sleep(1);
 	}
 

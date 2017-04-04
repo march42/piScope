@@ -66,32 +66,53 @@ namespace rpiScope
 		this->X = 0;
 		this->Y = 0;
 		this->Z = 0;
+		this->FullScale = 1.0;
 	};
-	IMU_Vector::IMU_Vector(int16_t X, int16_t Y, int16_t Z)
+	IMU_Vector::IMU_Vector(int16_t valX, int16_t valY, int16_t valZ, float valScale)
 	{
-		this->X = X;
-		this->Y = Y;
-		this->Z = Z;
+		this->X = valX;
+		this->Y = valY;
+		this->Z = valZ;
+		this->FullScale = valScale;
 	};
-	IMU_Vector& IMU_Vector::set(int16_t X, int16_t Y, int16_t Z)
+	IMU_Vector& IMU_Vector::set(int16_t valX, int16_t valY, int16_t valZ, float valScale)
 	{
-		this->X = X;
-		this->Y = Y;
-		this->Z = Z;
+		this->X = valX;
+		this->Y = valY;
+		this->Z = valZ;
+		this->FullScale = valScale;
 		return(*this);
 	};
-
-	IMU_MARGdata::IMU_MARGdata(size_t LPFValues)
+	float IMU_Vector::scaledX(void)
 	{
-		this->LPF_resize(LPFValues);
+		return(this->X * this->FullScale);
+	}
+	float IMU_Vector::scaledY(void)
+	{
+		return(this->Y * this->FullScale);
+	}
+	float IMU_Vector::scaledZ(void)
+	{
+		return(this->Z * this->FullScale);
+	}
+
+	IMU_Data::IMU_Data()
+	{
+		this->LPF_MaxValues = 32;
+		this->FullScale = 1.0;
 		this->InitMutex();
 	}
-	IMU_MARGdata::~IMU_MARGdata()
+	IMU_Data::~IMU_Data()
 	{
+#		ifdef DEBUG2
+		printf("\t%s\t%s\t%s\n", "IMU_Data", "destructor", "begin");
+#		endif
 		this->DestroyMutex();
+#		ifdef DEBUG2
+		printf("\t%s\t%s\t%s\n", "IMU_Data", "destructor", "done");
+#		endif
 	}
-
-	void IMU_MARGdata::LPF_resize(size_t LPFValues)
+	void IMU_Data::LPF_resize(size_t LPFValues)
 	{
 		if(32 < LPFValues)
 			this->LPF_MaxValues = LPFValues;
@@ -106,133 +127,140 @@ namespace rpiScope
 		else
 			this->LPF_MaxValues = 1;
 	}
-
-	void IMU_MARGdata::InitMutex(void)
+	void IMU_Data::InitMutex(void)
 	{
 		//	init mutex
-		pthread_mutex_init(&this->pthread_mutex_gyro, NULL);
-		pthread_mutex_init(&this->pthread_mutex_acc, NULL);
-		pthread_mutex_init(&this->pthread_mutex_mag, NULL);
+		pthread_mutex_init(&this->pthread_mutex, NULL);
 	}
-	void IMU_MARGdata::DestroyMutex(void)
+	void IMU_Data::DestroyMutex(void)
 	{
+#		ifdef DEBUG2
+		printf("\t%s\t%s\t%s\n", "IMU_Data", "DestroyMutex", "");
+#		endif
 		//	destroy mutex
-		pthread_mutex_lock(&this->pthread_mutex_gyro);
-		pthread_mutex_destroy(&this->pthread_mutex_gyro);
-		pthread_mutex_lock(&this->pthread_mutex_acc);
-		pthread_mutex_destroy(&this->pthread_mutex_acc);
-		pthread_mutex_lock(&this->pthread_mutex_mag);
-		pthread_mutex_destroy(&this->pthread_mutex_mag);
+		pthread_mutex_lock(&this->pthread_mutex);
+		pthread_mutex_destroy(&this->pthread_mutex);
+	}
+	IMU_Vector*	IMU_Data::vector(void)
+	{
+		//	calculate average
+		int32_t X = 0;
+		int32_t Y = 0;
+		int32_t Z = 0;
+		pthread_mutex_lock(&this->pthread_mutex);
+		size_t count = this->LPF_Values.size();
+		if(0 < count)
+		{
+			for(size_t pos=0; pos<count; ++pos)
+			{
+				X += this->LPF_Values[pos].X;
+				Y += this->LPF_Values[pos].Y;
+				Z += this->LPF_Values[pos].Z;
+			}
+			X /= count;
+			Y /= count;
+			Z /= count;
+		}
+		pthread_mutex_unlock(&this->pthread_mutex);
+		IMU_Vector* value = new IMU_Vector(X &0xFFFF, Y &0xFFFF, Z &0xFFFF, this->FullScale);
+		return(value);
+	}
+	int16_t IMU_Data::rawX(void)
+	{
+		return(this->LPF_Values.empty() ?0 :this->LPF_Values.back().X);
+	}
+	float IMU_Data::scaledX(void)
+	{
+		return(this->LPF_Values.empty() ?0.0 :(this->LPF_Values.back().X * this->FullScale));
+	}
+	int16_t IMU_Data::rawY(void)
+	{
+		return(this->LPF_Values.empty() ?0 :this->LPF_Values.back().Y);
+	}
+	float IMU_Data::scaledY(void)
+	{
+		return(this->LPF_Values.empty() ?0.0 :(this->LPF_Values.back().Y * this->FullScale));
+	}
+	int16_t IMU_Data::rawZ(void)
+	{
+		return(this->LPF_Values.empty() ?0 :this->LPF_Values.back().Z);
+	}
+	float IMU_Data::scaledZ(void)
+	{
+		return(this->LPF_Values.empty() ?0.0 :(this->LPF_Values.back().Z * this->FullScale));
+	}
+	void	IMU_Data::Push(int16_t X, int16_t Y, int16_t Z)
+	{
+		IMU_Vector value(X,Y,Z);
+		pthread_mutex_lock(&this->pthread_mutex);
+		this->LPF_Values.push_back(value);
+		while(this->LPF_MaxValues < this->LPF_Values.size())
+		{
+			this->LPF_Values.pop_front();
+		}
+		pthread_mutex_unlock(&this->pthread_mutex);
 	}
 
-	IMU_Vector*	IMU_MARGdata::Magnetometer(void)
+	IMU_MARGdata::IMU_MARGdata(size_t LPFValues)
 	{
-		static IMU_Vector value;
-		//	calculate average
-		int32_t X = 0;
-		int32_t Y = 0;
-		int32_t Z = 0;
-		pthread_mutex_lock(&this->pthread_mutex_mag);
-		size_t count = this->LPF_Magnetometer.size();
-		if(0 < count)
-		{
-			for(size_t pos=0; pos<count; ++pos)
-			{
-				X += this->LPF_Magnetometer[pos].X;
-				Y += this->LPF_Magnetometer[pos].Y;
-				Z += this->LPF_Magnetometer[pos].Z;
-			}
-			X /= count;
-			Y /= count;
-			Z /= count;
-			value.set(X &0xFFFF, Y &0xFFFF, Z &0xFFFF);
-		}
-		pthread_mutex_unlock(&this->pthread_mutex_mag);
-		return(&value);
+		this->LPF_resize(LPFValues);
 	}
-	IMU_Vector*	IMU_MARGdata::Acceleration(void)
+	IMU_MARGdata::~IMU_MARGdata()
 	{
-		static IMU_Vector value;
-		//	calculate average
-		int32_t X = 0;
-		int32_t Y = 0;
-		int32_t Z = 0;
-		pthread_mutex_lock(&this->pthread_mutex_acc);
-		size_t count = this->LPF_Acceleration.size();
-		if(0 < count)
-		{
-			for(size_t pos=0; pos<count; ++pos)
-			{
-				X += this->LPF_Acceleration[pos].X;
-				Y += this->LPF_Acceleration[pos].Y;
-				Z += this->LPF_Acceleration[pos].Z;
-			}
-			X /= count;
-			Y /= count;
-			Z /= count;
-			value.set(X &0xFFFF, Y &0xFFFF, Z &0xFFFF);
-		}
-		pthread_mutex_unlock(&this->pthread_mutex_acc);
-		return(&value);
-	}
-	IMU_Vector*	IMU_MARGdata::Gyroscope(void)
-	{
-		static IMU_Vector value;
-		//	calculate average
-		int32_t X = 0;
-		int32_t Y = 0;
-		int32_t Z = 0;
-		pthread_mutex_lock(&this->pthread_mutex_gyro);
-		size_t count = this->LPF_Gyroscope.size();
-		if(0 < count)
-		{
-			for(size_t pos=0; pos<count; ++pos)
-			{
-				X += this->LPF_Gyroscope[pos].X;
-				Y += this->LPF_Gyroscope[pos].Y;
-				Z += this->LPF_Gyroscope[pos].Z;
-			}
-			X /= count;
-			Y /= count;
-			Z /= count;
-			value.set(X &0xFFFF, Y &0xFFFF, Z &0xFFFF);
-		}
-		pthread_mutex_unlock(&this->pthread_mutex_gyro);
-		return(&value);
+#		ifdef DEBUG2
+		printf("\t%s\t%s\t%s\n", "IMU_MARGdata", "destructor", "");
+#		endif
 	}
 
-	void	IMU_MARGdata::PushMagnetometer(int16_t X, int16_t Y, int16_t Z)
+	void IMU_MARGdata::LPF_resize(size_t LPFValues)
 	{
-		IMU_Vector value(X,Y,Z);
-		pthread_mutex_lock(&this->pthread_mutex_mag);
-		this->LPF_Magnetometer.push_back(value);
-		while(this->LPF_MaxValues < this->LPF_Magnetometer.size())
-		{
-			this->LPF_Magnetometer.pop_front();
-		}
-		pthread_mutex_unlock(&this->pthread_mutex_mag);
+		size_t LPF_MaxValues = 1;
+		if(32 < LPFValues)
+			LPF_MaxValues = LPFValues;
+		else if(16 < LPFValues)
+			LPF_MaxValues = 32;
+		else if(8 < LPFValues)
+			LPF_MaxValues = 16;
+		else if(4 < LPFValues)
+			LPF_MaxValues = 8;
+		else if(1 < LPFValues)
+			LPF_MaxValues = 4;
+		//	set to childs
+		this->DataMagnetometer.LPF_resize(LPF_MaxValues);
+		this->DataAcceleration.LPF_resize(LPF_MaxValues);
+		this->DataGyroscope.LPF_resize(LPF_MaxValues);
 	}
-	void	IMU_MARGdata::PushAcceleration(int16_t X, int16_t Y, int16_t Z)
+
+	IMU_Vector* IMU_MARGdata::Magnetometer(void)
 	{
-		IMU_Vector value(X,Y,Z);
-		pthread_mutex_lock(&this->pthread_mutex_acc);
-		this->LPF_Acceleration.push_back(value);
-		while(this->LPF_MaxValues < this->LPF_Acceleration.size())
-		{
-			this->LPF_Acceleration.pop_front();
-		}
-		pthread_mutex_unlock(&this->pthread_mutex_acc);
+		return(this->DataMagnetometer.vector());
 	}
-	void	IMU_MARGdata::PushGyroscope(int16_t X, int16_t Y, int16_t Z)
+	IMU_Vector* IMU_MARGdata::Acceleration(void)
 	{
-		IMU_Vector value(X,Y,Z);
-		pthread_mutex_lock(&this->pthread_mutex_gyro);
-		this->LPF_Gyroscope.push_back(value);
-		while(this->LPF_MaxValues < this->LPF_Gyroscope.size())
-		{
-			this->LPF_Gyroscope.pop_front();
-		}
-		pthread_mutex_unlock(&this->pthread_mutex_gyro);
+		return(this->DataAcceleration.vector());
+	}
+	IMU_Vector* IMU_MARGdata::Gyroscope(void)
+	{
+		return(this->DataGyroscope.vector());
+	}
+
+	void IMU_MARGdata::PushMagnetometer(int16_t X, int16_t Y, int16_t Z)
+	{
+		this->DataMagnetometer.Push(X,Y,Z);
+	}
+	void IMU_MARGdata::PushAcceleration(int16_t X, int16_t Y, int16_t Z)
+	{
+		this->DataAcceleration.Push(X,Y,Z);
+	}
+	void IMU_MARGdata::PushGyroscope(int16_t X, int16_t Y, int16_t Z)
+	{
+		this->DataGyroscope.Push(X,Y,Z);
+	}
+	void IMU_MARGdata::SetFullScale(float gyro, float acc, float mag)
+	{
+		this->DataGyroscope.FullScale = gyro;
+		this->DataAcceleration.FullScale = acc;
+		this->DataMagnetometer.FullScale = mag;
 	}
 
 

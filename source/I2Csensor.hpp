@@ -82,6 +82,7 @@ namespace rpiScope
 			bool pthread_stopping;
 			pthread_t pthread_read;
 			pthread_attr_t pthread_attributes;
+			void DebugDataBuffer(void);
 			friend void *pthread_DataReading(void *data);
 		private:
 	};
