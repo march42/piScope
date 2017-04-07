@@ -79,6 +79,7 @@ int main(int argc, char* argv[], char* envp[])
 		rpiScope::IMU_Vector*	Acceleration = imu.IMUvalue.Acceleration();
 		rpiScope::IMU_Vector*	Gyroscope = imu.IMUvalue.Gyroscope();
 		rpiScope::IMU_Vector*	Magnetometer = imu.IMUvalue.Magnetometer();
+		rpiScope::IMU_Vector*	euler = imu.IMUvalue.Orientation();
 #		if defined(DEBUG3)
 		std::cout << "\t" << "a=" << Acceleration->X << "," << Acceleration->Y << "," << Acceleration->Z
 			<< "\t" << "a=" << Acceleration->scaledX() << "," << Acceleration->scaledY() << "," << Acceleration->scaledZ()
@@ -89,13 +90,21 @@ int main(int argc, char* argv[], char* envp[])
 		std::cout << "\t" << "m=" << Magnetometer->X << "," << Magnetometer->Y << "," << Magnetometer->Z
 			<< "\t" << "m=" << Magnetometer->scaledX() << "," << Magnetometer->scaledY() << "," << Magnetometer->scaledZ()
 			<< std::endl;
-#		else
+#		elif defined(DEBUG2)
 		std::cout
 			<< "\t" << "a=" << Acceleration->scaledX() << "," << Acceleration->scaledY() << "," << Acceleration->scaledZ()
 			<< "\t" << "g=" << Gyroscope->scaledX() << "," << Gyroscope->scaledY() << "," << Gyroscope->scaledZ()
 			<< "\t" << "m=" << Magnetometer->scaledX() << "," << Magnetometer->scaledY() << "," << Magnetometer->scaledZ()
 			<< std::endl;
 #		endif
+		std::cout
+			<< "\t" << "O=" << euler->scaledX() << "," << euler->scaledY() << "," << euler->scaledZ()
+			<< std::endl;
+		//	free vector data
+		delete(Acceleration);
+		delete(Gyroscope);
+		delete(Magnetometer);
+		delete(euler);
 		sleep(1);
 	}
 

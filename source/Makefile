@@ -10,7 +10,7 @@ test_i2c_OBJ = $(test_i2c_CPP:.cpp=.obj)
 
 CCFLAGS = -O4 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG -DUSE_OWN_I2CDEV
 CCFLAGS += $(CCEXTRA)
-LDFLAGS = -O4 -s -lstdc++ -pthread
+LDFLAGS = -O4 -s -lstdc++ -pthread -lm
 
 ifeq ($(OS),Windows_NT)
 	RM = cmd //C del //Q //F

@@ -16,16 +16,24 @@ namespace rpiScope
 	class IMU_Vector
 	{
 		public:
-			int16_t	X;	//	X,Y,Z
-			int16_t	Y;	//	X,Y,Z
-			int16_t	Z;	//	X,Y,Z
+			float	X;	//	X,Y,Z
+			float	Y;	//	X,Y,Z
+			float	Z;	//	X,Y,Z
 			float FullScale;
 			IMU_Vector();
+			IMU_Vector(float valX, float valY, float valZ, float valScale=1.0);
 			IMU_Vector(int16_t valX, int16_t valY, int16_t valZ, float valScale=1.0);
-			IMU_Vector& set(int16_t valX, int16_t valY, int16_t valZ, float valScale=1.0);
+			IMU_Vector(int32_t valX, int32_t valY, int32_t valZ, float valScale=1.0);
+			IMU_Vector(IMU_Vector* value);
+			IMU_Vector& set(float valX, float valY, float valZ, float valScale=0.0);
+			IMU_Vector& set(int16_t valX, int16_t valY, int16_t valZ, float valScale=0.0);
+			IMU_Vector& set(int32_t valX, int32_t valY, int32_t valZ, float valScale=0.0);
 			float scaledX(void);
 			float scaledY(void);
 			float scaledZ(void);
+			float Length;
+			IMU_Vector& Normalize(void);
+			IMU_Vector* ToEuler(void);
 		protected:
 		private:
 	};
@@ -68,6 +76,8 @@ namespace rpiScope
 			void PushAcceleration(int16_t X, int16_t Y, int16_t Z);
 			void PushGyroscope(int16_t X, int16_t Y, int16_t Z);
 			void SetFullScale(float gyro, float acc, float mag);
+			//	get calculated values
+			IMU_Vector* Orientation(void);
 		protected:
 			IMU_Data DataMagnetometer;
 			IMU_Data DataAcceleration;

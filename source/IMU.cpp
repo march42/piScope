@@ -54,33 +54,87 @@ namespace rpiScope
 		Die Konvention der Orientierung der Winkel folgt der in der Mathematik üblichen Rechte-Hand-Regel, ein positiver Winkel zeigt also
 		entgegen dem Uhrzeigersinn. Alle weiteren Rotationsachsen ergeben sich dynamisch gemäß der definierten Reihenfolge der Rotationen.
 
-	scale factor
-		16bit signed integer ==32768
-		gyroscope	+/- 245 dps = 32768/(2x245)
-		accelerometer	+/- 2 g = 32768/(2x2)
-		magnetometer	+/- 4 gauss = 32768/(2x4)
+	full scale factor - get values from chip datasheet
+		16bit signed integer = -32768/+32767
+		gyroscope	+/- 245 dps = 245/32768
+		accelerometer	+/- 2 g = 2/32768
+		magnetometer	+/- 4 gauss = 4/32768
 */
 
 	IMU_Vector::IMU_Vector()
 	{
-		this->X = 0;
-		this->Y = 0;
-		this->Z = 0;
+		this->X = 1.0;
+		this->Y = 0.0;
+		this->Z = 0.0;
 		this->FullScale = 1.0;
+		this->Length = 1.0;
+	};
+	IMU_Vector::IMU_Vector(IMU_Vector* value)
+	{
+		this->X = value->X;
+		this->Y = value->Y;
+		this->Z = value->Z;
+		this->FullScale = value->FullScale;
+		this->Length = value->Length;
+	};
+	IMU_Vector::IMU_Vector(float valX, float valY, float valZ, float valScale)
+	{
+		this->X = valX;
+		this->Y = valY;
+		this->Z = valZ;
+		this->FullScale = (0.0 == valScale) ?1.0 :valScale;
+		this->Length = 1.0;
 	};
 	IMU_Vector::IMU_Vector(int16_t valX, int16_t valY, int16_t valZ, float valScale)
 	{
-		this->X = valX;
-		this->Y = valY;
-		this->Z = valZ;
-		this->FullScale = valScale;
+		this->X = valX *1.0;
+		this->Y = valY *1.0;
+		this->Z = valZ *1.0;
+		this->FullScale = (0.0 == valScale) ?1.0 :valScale;
+		this->Length = 1.0;
 	};
-	IMU_Vector& IMU_Vector::set(int16_t valX, int16_t valY, int16_t valZ, float valScale)
+	IMU_Vector::IMU_Vector(int32_t valX, int32_t valY, int32_t valZ, float valScale)
+	{
+		this->X = valX *1.0;
+		this->Y = valY *1.0;
+		this->Z = valZ *1.0;
+		this->FullScale = (0.0 == valScale) ?1.0 :valScale;
+		this->Length = 1.0;
+	};
+	IMU_Vector& IMU_Vector::set(float valX, float valY, float valZ, float valScale)
 	{
 		this->X = valX;
 		this->Y = valY;
 		this->Z = valZ;
-		this->FullScale = valScale;
+		if(0.0 != valScale)
+		{
+			this->FullScale = valScale;
+		}
+		this->Length = 1.0;
+		return(*this);
+	};
+	IMU_Vector& IMU_Vector::set(int16_t valX, int16_t valY, int16_t valZ, float valScale)
+	{
+		this->X = valX *1.0;
+		this->Y = valY *1.0;
+		this->Z = valZ *1.0;
+		if(0.0 != valScale)
+		{
+			this->FullScale = valScale;
+		}
+		this->Length = 1.0;
+		return(*this);
+	};
+	IMU_Vector& IMU_Vector::set(int32_t valX, int32_t valY, int32_t valZ, float valScale)
+	{
+		this->X = valX *1.0;
+		this->Y = valY *1.0;
+		this->Z = valZ *1.0;
+		if(0.0 != valScale)
+		{
+			this->FullScale = valScale;
+		}
+		this->Length = 1.0;
 		return(*this);
 	};
 	float IMU_Vector::scaledX(void)
@@ -94,6 +148,39 @@ namespace rpiScope
 	float IMU_Vector::scaledZ(void)
 	{
 		return(this->Z * this->FullScale);
+	}
+	IMU_Vector& IMU_Vector::Normalize(void)
+	{
+		this->Length = sqrt( (this->X*this->X) + (this->Y*this->Y) + (this->Z*this->Z) );
+#		ifdef DEBUG3
+		printf("\t%s\t%f,%f,%f\t%f\n", "IMU_Vector::Normalize", this->X, this->Y, this->Z, this->Length);
+#		endif
+		if(0 != this->Length)
+		{
+			this->X /= this->Length;
+			this->Y /= this->Length;
+			this->Z /= this->Length;
+		}
+		return(*this);
+	}
+	IMU_Vector* IMU_Vector::ToEuler(void)
+	{
+		IMU_Vector* value = new IMU_Vector(this);
+		//	normalize vector
+		value->Normalize();
+		//	compute Euler angle
+		float EulerX = atan2( value->Y, value->Z );
+		float EulerY = -atan2( value->X, sqrt( (value->Y*value->Y) + (value->Z*value->Z) ) );
+#		ifdef DEBUG2
+		printf("\t%s\t%f,%f\t%f,%f\n", "IMU_Vector::ToEuler", EulerX, EulerY, value->Length, value->FullScale);
+#		endif
+		//	set vector to temporary values
+		value->X = EulerX;
+		value->Y = EulerY;
+		value->Z = 0.0;
+		value->FullScale = 1.0;
+		value->Length = 1.0;
+		return(value);
 	}
 
 	IMU_Data::IMU_Data()
@@ -144,9 +231,9 @@ namespace rpiScope
 	IMU_Vector*	IMU_Data::vector(void)
 	{
 		//	calculate average
-		int32_t X = 0;
-		int32_t Y = 0;
-		int32_t Z = 0;
+		float X = 0;
+		float Y = 0;
+		float Z = 0;
 		pthread_mutex_lock(&this->pthread_mutex);
 		size_t count = this->LPF_Values.size();
 		if(0 < count)
@@ -162,7 +249,7 @@ namespace rpiScope
 			Z /= count;
 		}
 		pthread_mutex_unlock(&this->pthread_mutex);
-		IMU_Vector* value = new IMU_Vector(X &0xFFFF, Y &0xFFFF, Z &0xFFFF, this->FullScale);
+		IMU_Vector* value = new IMU_Vector(X, Y, Z, this->FullScale);
 		return(value);
 	}
 	int16_t IMU_Data::rawX(void)
@@ -263,5 +350,26 @@ namespace rpiScope
 		this->DataMagnetometer.FullScale = mag;
 	}
 
+	IMU_Vector* IMU_MARGdata::Orientation(void)
+	{
+		//	get sensor data and normalize
+		IMU_Vector* gyro = this->Gyroscope();
+		gyro->Normalize();
+		IMU_Vector* acc = this->Acceleration();
+		acc->Normalize();
+		//	calculate
+		float gyroFactor = 1.0/32;
+		float valX = (acc->X *(1.0-gyroFactor)) + (gyro->X *gyroFactor);
+		float valY = (acc->Y *(1.0-gyroFactor)) + (gyro->Y *gyroFactor);
+		float valZ = (acc->Z *(1.0-gyroFactor)) + (gyro->Z *gyroFactor);
+		float EulerX = atan2( valY, valZ );
+		float EulerY = -atan2( valX, sqrt( (valY*valY) + (valZ*valZ) ) );
+		IMU_Vector* value = new IMU_Vector(EulerX,EulerY,0.0, (180/M_PI) );
+		//	free buffers
+		delete(gyro);
+		delete(acc);
+		//	return
+		return(value);
+	}
 
 };
