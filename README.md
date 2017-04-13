@@ -13,6 +13,12 @@ Der Raspberry Pi als Plattform bot sich an, da ich davon den Einen oder Anderen 
 meiner PIs steckt der PiHat (Astro Pi) der einen LSM9DS1 9DOF Sensor an Bord hat. Für den Anfang dürfte das
 also tun, für die Endversion würde ich dann eventuell eher den Bosch BSO055 wählen.
 
+Credits
+Stellarium findet man unter http://stellarium.org/
+GPIO handling erledigt die PIGPIO library http://abyz.co.uk/rpi/pigpio/
+Infos zum BNO055 von Bosch gibt es dort https://www.bosch-sensortec.com/bst/products/all_products/bno055
+Von Bosch gibt es eine library https://github.com/BoschSensortec/BNO055_driver
+
 Status und ToDo
 Der 9DOF liefert immer etwas sinnfreie Werte, aber schon grob mit richtiger Richtung.
 Eine Einnordung und Kalibrierung des 9DOF habe ich noch nicht geschafft.

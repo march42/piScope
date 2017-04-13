@@ -35,6 +35,12 @@ public:	/* public members are accessible from anywhere */
 	GPIO_PIN(int pinnr=-1);
 	~GPIO_PIN();
 	//	PIN preparation and setup
+	int gpioGetMode(void);
+	int gpioSetMode(unsigned value);
+	int gpioSetPullUpDown(unsigned value);
+	//	PIN manipulation
+	int gpioRead(void);
+	int gpioWrite(unsigned value);
 	//	status checking
 	bool gpioGood(void) const;
 

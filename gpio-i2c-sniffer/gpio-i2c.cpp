@@ -102,6 +102,33 @@ public:
 		return(this->valid() && this->clockpin->gpioGood() && this->datapin->gpioGood());
 	}
 
+	int prepareGPIO(void)
+	{
+		sniffer->printLog(6,"%s:\tprepareGPIO (SCL=%d,SDA=%d)\n", sniffer->TimeStamp() ,this->SCL,this->SDA);
+		int value = 0;	//	0==OK
+		if(!this->valid())
+		{
+			return(PI_BAD_USER_GPIO);
+		}
+		else if(0 != (value=this->clockpin->gpioSetPullUpDown(PI_PUD_OFF)))
+		{
+			sniffer->printLog(0,"%s:\tprepareGPIO (%d==%s)\n", sniffer->TimeStamp() ,value,"clockpin->gpioSetPullUpDown(PI_PUD_OFF)");
+		}
+		else if(0 != (value=this->clockpin->gpioSetMode(PI_INPUT)))
+		{
+			sniffer->printLog(0,"%s:\tprepareGPIO (%d==%s)\n", sniffer->TimeStamp() ,value,"clockpin->gpioSetMode(PI_INPUT)");
+		}
+		else if(0 != (value=this->datapin->gpioSetPullUpDown(PI_PUD_OFF)))
+		{
+			sniffer->printLog(0,"%s:\tprepareGPIO (%d==%s)\n", sniffer->TimeStamp() ,value,"datapin->gpioSetPullUpDown(PI_PUD_OFF)");
+		}
+		else if(0 != (value=this->datapin->gpioSetMode(PI_INPUT)))
+		{
+			sniffer->printLog(0,"%s:\tprepareGPIO (%d==%s)\n", sniffer->TimeStamp() ,value,"datapin->gpioSetMode(PI_PUD_OFF)");
+		}
+		return(value);
+	}
+
 	/*	getting a useful timestamp
 	**	uint32_t gpioTick(void)
 	**		returns microseconds since system boot
@@ -167,6 +194,51 @@ public:
 		}
 		return(written);
 	}
+
+	int bbI2COpen(unsigned value)
+	{
+		sniffer->printLog(6,"%s:\topen GPIO for I2C communication (SCL=%d,SDA=%d,fSCL=%d)\n", sniffer->TimeStamp() ,this->SCL,this->SDA,value);
+		//	Returns 0 if OK, otherwise PI_BAD_USER_GPIO, PI_BAD_I2C_BAUD, or PI_GPIO_IN_USE.
+		if(0 > this->SDA || 0 > this->SCL)
+		{
+			return(PI_BAD_USER_GPIO);
+		}
+		return(::bbI2COpen(this->SDA,this->SCL,value));
+	}
+	int bbI2CClose(void)
+	{
+		sniffer->printLog(6,"%s:\tclose GPIO from I2C communication\n", sniffer->TimeStamp());
+		//	Returns 0 if OK, otherwise PI_BAD_USER_GPIO, PI_BAD_I2C_BAUD, or PI_GPIO_IN_USE.
+		if(0 > this->SDA || 0 > this->SCL)
+		{
+			return(PI_BAD_USER_GPIO);
+		}
+		return(::bbI2CClose(this->SDA));
+	}
+	int bbI2CZip(char *inBuf, unsigned inLen, char *outBuf, unsigned outLen)
+	{
+		sniffer->printLog(6,"%s:\tGPIO bitbanging I2C communication\n", sniffer->TimeStamp());
+		/*	int bbI2CZip(char *inBuf, unsigned inLen, char *outBuf, unsigned outLen)
+		**	Returns >= 0 if OK (the number of bytes read)
+		**	otherwise PI_BAD_USER_GPIO, PI_NOT_I2C_GPIO, PI_BAD_POINTER, PI_BAD_I2C_CMD, PI_BAD_I2C_RLEN, PI_BAD_I2C_WLEN, PI_I2C_READ_FAILED, or PI_I2C_WRITE_FAILED
+		**
+		**	Name	Cmd & Data	Meaning
+		**	End	0	No more commands
+		**	Escape	1	Next P is two bytes
+		**	Start	2	Start condition
+		**	Stop	3	Stop condition
+		**	Address	4 P	Set I2C address to P
+		**	Flags	5 lsb msb	Set I2C flags to lsb + (msb << 8)
+		**	Read	6 P	Read P bytes of data
+		**	Write	7 P ...	Write P bytes of data
+		*/
+		if(0 > this->SDA || 0 > this->SCL)
+		{
+			return(PI_BAD_USER_GPIO);
+		}
+		return(::bbI2CZip(this->SDA, inBuf, inLen, outBuf, outLen));
+	}
+
 };
 void main_usage(const char* error = NULL, const char* arg0 = __FILE__)
 {
@@ -228,7 +300,8 @@ int main (int argc, char* argv[], char* envp[])
 			//	prepare log file
 			sniffer->SetLogFile();	//	this will open stdout and sniffer.log
 			sniffer->printLog(2,"%s:\t(%s) start sniffing for I2C communication\n", sniffer->TimeStamp(),sniffer->TimeStampUTC());
-			//	prepare GPIO sniffing
+			//	prepare GPIO for sniffing
+			sniffer->prepareGPIO();
 			//	running loop
 			while(keep_running)
 			{
@@ -346,6 +419,67 @@ int main (int argc, char* argv[], char* envp[])
 	{
 		this->gpioTerminate();
 	};
+
+	int gpioGetMode(void)
+	{
+#if defined(TRACE)
+		fprintf(stderr, "TRACE:\t%s\n", "GPIO_PIN gpioGetMode");
+#endif
+		//	0==OK, PI_BAD_GPIO==error
+		if(0 > this->gpiopin)
+		{
+			return(PI_BAD_GPIO);
+		}
+		return(::gpioGetMode(this->gpiopin));
+	}
+	int gpioSetMode(unsigned value)
+	{
+#if defined(TRACE)
+		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioSetMode", value);
+#endif
+		//	Returns 0 if OK, otherwise PI_BAD_GPIO or PI_BAD_MODE.
+		if(0 > this->gpiopin)
+		{
+			return(PI_BAD_GPIO);
+		}
+		return(::gpioSetMode(this->gpiopin,value));
+	}
+	int gpioSetPullUpDown(unsigned value)
+	{
+#if defined(TRACE)
+		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioSetPullUpDown", value);
+#endif
+		//	0==OK, PI_BAD_GPIO==pin, PI_BAD_PUD==error
+		if(0 > this->gpiopin)
+		{
+			return(PI_BAD_GPIO);
+		}
+		return(::gpioSetPullUpDown(this->gpiopin,value));
+	}
+	int gpioRead(void)
+	{
+#if defined(TRACE)
+		fprintf(stderr, "TRACE:\t%s\n", "GPIO_PIN gpioRead");
+#endif
+		//	0==OK, PI_BAD_GPIO==pin
+		if(0 > this->gpiopin)
+		{
+			return(PI_BAD_GPIO);
+		}
+		return(::gpioRead(this->gpiopin));
+	}
+	int gpioWrite(unsigned value)
+	{
+#if defined(TRACE)
+		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioWrite", value);
+#endif
+		//	0==OK, PI_BAD_GPIO==pin, PI_BAD_LEVEL==error
+		if(0 > this->gpiopin)
+		{
+			return(PI_BAD_GPIO);
+		}
+		return(::gpioWrite(this->gpiopin,value));
+	}
 
 	bool GPIO_PIN::gpioGood(void) const
 	{
