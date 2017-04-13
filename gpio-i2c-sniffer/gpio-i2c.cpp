@@ -4,7 +4,7 @@
 
 #include "gpio-i2c.h"
 
-#	include <unistd.h>
+#include <unistd.h>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -12,25 +12,13 @@
 #include <stdexcept>
 #include <cassert>
 #include <ctime>
+#include <cstdarg>
 
 #if defined(_WITH_MAIN_)
 /*	I2C protcol sniffer
 **	main routine
 **		sniffer [SDA,SCL[,NAME]] ...
 */
-void main_usage(const char* error = NULL, const char* arg0 = __FILE__)
-{
-	fprintf(stderr, "%s (%s build %s %s)\n", arg0, __FILE__, __DATE__, __TIME__);
-	fprintf(stderr, "usage:\t%s %s\n", arg0, "[SCL,SDA[,NAME]]" );
-	fprintf(stderr, "\t%s %s\n", "SCL","is the GPIOx pin for clock" );
-	fprintf(stderr, "\t%s %s\n", "SDA","is the GPIOx pin for data" );
-	fprintf(stderr, "\t%s %s\n", "NAME","is the name to appear in output instead of GPIOx" );
-	fprintf(stderr, "\t%s\n", "For some functions, this program needs to be run as root." );
-	if(NULL != error)
-	{
-		fprintf(stderr, "\nerror:\t%s\n\n", error);
-	}
-}
 class I2CSNIFFER //: protected GPIO_PIN
 {
 private:
@@ -39,6 +27,8 @@ private:
 	int SDA;
 	GPIO_PIN* datapin;
 	char NAME[128];
+	FILE* LOGFILE;
+	int LOGLEVEL;
 protected:
 public:
 	I2CSNIFFER(const char* arg1)
@@ -61,6 +51,10 @@ public:
 			this->clockpin = new GPIO_PIN(this->SCL);
 			this->datapin = new GPIO_PIN(this->SDA);
 		}
+		//	prepare log
+		this->LOGFILE = NULL;
+		this->LOGLEVEL = 3;
+		//	done
 #		if defined(DEBUG)
 		fprintf(stdout, "sniffer:\t%s\tSCL=%d,SDA=%d\n", this->NAME,this->SCL,this->SDA);
 #		endif
@@ -68,7 +62,7 @@ public:
 	~I2CSNIFFER()
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s\n", "I2CSNIFFER destructor");
+		std::fprintf(stderr, "TRACE:\t%s\n", "I2CSNIFFER destructor");
 #endif		
 		if(NULL != this->clockpin)
 		{
@@ -77,6 +71,10 @@ public:
 		if(NULL != this->datapin)
 		{
 			delete(this->datapin);
+		}
+		if(NULL != this->LOGFILE)
+		{
+			std::fclose(this->LOGFILE);
 		}
 	}
 	bool valid(void)
@@ -87,14 +85,102 @@ public:
 	{
 		return(this->valid() && this->clockpin->gpioGood() && this->datapin->gpioGood());
 	}
-	const char* TimeStamp(void) const
+
+	/*	getting a useful timestamp
+	**	uint32_t gpioTick(void)
+	**		returns microseconds since system boot
+	**		As tick is an unsigned 32 bit quantity it wraps around after 2^32 microseconds, which is approximately 1 hour 12 minutes.
+	**	int gpioTime(unsigned timetype, int *seconds, int *micros)
+	**		return 0=SUCCESS or PI_BAD_TIMETYPE
+	**		timetype=PI_TIME_ABSOLUTE seconds since epoche, timetype=PI_TIME_RELATIVE seconds since library initialized
+	*/
+	const char* TimeStampUTC(void) const
 	{
 		time_t ts; time(&ts);
 		static char value[20];
 		strftime(&value[0],sizeof(value), "%04Y%02m%02d.%02H%02M%02S %Z", gmtime(&ts));
 		return(&value[0]);
 	}
+	const char* TimeStamp(void) const
+	{
+		int sec = 0;
+		int ysec = 0;
+		::gpioTime(PI_TIME_RELATIVE, &sec,&ysec);
+		static char value[20];
+		sprintf(&value[0], "%04d.%06d", sec,ysec);
+		return(&value[0]);
+	}
+
+	FILE* SetLogFile(const char* file=NULL)
+	{
+		this->LOGFILE = std::fopen((NULL==file ?"sniffer.log" :file),"a");
+		return(this->LOGFILE);
+	}
+	/*	loglevel
+	**	0	FEHLER
+	**	1	WARNUNGEN
+	**	2	START/STOP
+	**	3	Daten
+	**	4,5	Datenanalyse
+	**	6,7	GPIO
+	*/
+	int SetLogLevel(int level=-1)
+	{
+		if(-1 != level)
+		{
+			this->LOGLEVEL = level;
+		}
+		return(this->LOGLEVEL);
+	}
+	int printLog(int level, const char * format, ... ) const
+	{
+#if defined(TRACE)
+		fprintf(stderr, "TRACE:\t%s\t(%d<=%d)\n", "I2CSNIFFER printLog", level, this->LOGLEVEL);
+#endif
+		int written = 0;
+		if(level <= this->LOGLEVEL)
+		{
+			va_list args;
+			va_start(args, format);
+			char message[200] = {0};
+			written = snprintf(&message[0],sizeof(message), "%s:\t", this->TimeStamp());
+			written += vsnprintf(&message[written],sizeof(message)-written, format, args);
+			va_end(args);
+			fprintf(stdout, "%s", message);
+			if(NULL != this->LOGFILE)	fprintf(this->LOGFILE, "%s", message);
+		}
+		return(written);
+	}
 };
+void main_usage(const char* error = NULL, const char* arg0 = __FILE__)
+{
+	fprintf(stderr, "%s (%s build %s %s)\n", arg0, __FILE__, __DATE__, __TIME__);
+	fprintf(stderr, "usage:\t%s %s\n", arg0, "[SCL,SDA[,NAME]]" );
+	fprintf(stderr, "\t%s %s\n", "SCL","is the GPIOx pin for clock" );
+	fprintf(stderr, "\t%s %s\n", "SDA","is the GPIOx pin for data" );
+	fprintf(stderr, "\t%s %s\n", "NAME","is the name to appear in output instead of GPIOx" );
+	fprintf(stderr, "\t%s\n", "For some functions, this program needs to be run as root." );
+	if(NULL != error)
+	{
+		fprintf(stderr, "\nerror:\t%s\n\n", error);
+	}
+}
+static volatile bool keep_running = true;
+#include <signal.h>
+static void signal_handler(int signum)
+{
+	switch (signum)
+	{
+		case SIGINT:
+		case SIGQUIT:
+		case SIGTERM:
+			keep_running = false;
+			break;
+		default:
+			// just ignore
+			break;
+	}
+}
 int main (int argc, char* argv[], char* envp[])
 {
 	fprintf(stdout, "%s (%s build %s)\n", argv[0], __FILE__, __DATE__);
@@ -106,18 +192,33 @@ int main (int argc, char* argv[], char* envp[])
 	}
 	else
 	{
-		I2CSNIFFER sniffer(argv[1]);
-		if(!sniffer.valid())
+		I2CSNIFFER* sniffer = new I2CSNIFFER(argv[1]);
+		if(!sniffer->valid())
 		{
 			main_usage("invalid arguments passed", argv[0]);
 		}
-		else if(!sniffer.good())
+		else if(!sniffer->good())
 		{
 			main_usage("could not initialize", argv[0]);
 		}
 		else
 		{
-			fprintf(stdout, "%s:\tstart sniffing for I2C communication\n", sniffer.TimeStamp());
+			//	prepare signal handler
+			signal(SIGPIPE, SIG_IGN);	//	ignore SIGPIPE
+			signal(SIGINT, signal_handler);
+			signal(SIGTERM, signal_handler);
+			signal(SIGQUIT, signal_handler);
+			signal(SIGHUP, signal_handler);	//	maybe i should ignore SIGHUP???
+			//	prepare log file
+			sniffer->SetLogFile();	//	this will open stdout and sniffer.log
+			sniffer->printLog(2,"%s:\t(%s) start sniffing for I2C communication\n", sniffer->TimeStamp(),sniffer->TimeStampUTC());
+			//	prepare GPIO sniffing
+			//	running loop
+			while(keep_running)
+			{
+			}
+			//	cleanup and exit now
+			sniffer->printLog(2,"%s:\t(%s) stopp sniffing\n", sniffer->TimeStamp(),sniffer->TimeStampUTC());
 		}
 	}
 	//	done
