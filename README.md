@@ -16,3 +16,11 @@ also tun, für die Endversion würde ich dann eventuell eher den Bosch BSO055 w�
 Status und ToDo
 Der 9DOF liefert immer etwas sinnfreie Werte, aber schon grob mit richtiger Richtung.
 Eine Einnordung und Kalibrierung des 9DOF habe ich noch nicht geschafft.
+Nachdem ich mich mit der Arithmethik und Sensorfusion beschäftigte graut es mir dolle
+
+Bei meiner Bresser EXOS-2 ist mir aufgefallen, dass die Motoren über i2c angesteuert werden und darüber auch
+die Bewegungen zurück melden. Mit etwas Aufwand dürfte es machbar sein, die Motorsteuerung und Positions-
+bestimmung hierüber komplett nach zu bilden. Als erstes werde ich mir also mal einen I2C sniffer bauen, der
+das Protokoll aufzeichnet und die Logs auf Regelmässigkeiten analysieren. Die Ansteuerung und Positionsberechnung
+liese sich am einfachsten mit einem Stellarium TelescopeServer realisieren, hierin das I2C Protokoll einzubauen
+wäre auch nicht besonders aufwendig.
