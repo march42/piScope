@@ -24,3 +24,5 @@ bestimmung hierüber komplett nach zu bilden. Als erstes werde ich mir also mal 
 das Protokoll aufzeichnet und die Logs auf Regelmässigkeiten analysieren. Die Ansteuerung und Positionsberechnung
 liese sich am einfachsten mit einem Stellarium TelescopeServer realisieren, hierin das I2C Protokoll einzubauen
 wäre auch nicht besonders aufwendig.
+
+Habe https://github.com/ChrisDick/StarPi/ gefunden, ein vergleichbares Projekt, das ich mir genauer ansehen muss.
