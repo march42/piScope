@@ -34,7 +34,7 @@ endif
 all: $(LIBRARIES_O) gpio-i2c-sniffer
 
 clean:
-	$(RM) $(LIBRARIES_O) gpio-i2c-sniffer.o gpio-i2c-sniffer
+	-$(RM) $(LIBRARIES_O) gpio-i2c-sniffer.o gpio-i2c-sniffer
 
 gpio-i2c-sniffer: gpio-i2c.cpp
 	$(CC) $(CCFLAGS) -D_WITH_MAIN_ gpio-i2c.cpp -c -o gpio-i2c-sniffer.o
