@@ -31,48 +31,74 @@
 #include <cstdarg>
 
 #if defined(_WITH_MAIN_)
+#	include <deque>
+#	include <pthread.h>
+
 /*	I2C protcol sniffer
 **	main routine
 **		sniffer [SDA,SCL[,NAME]] ...
 */
+void *pthread_main(void *data);	//	prototype
 class I2CSNIFFER //: protected GPIO_PIN
 {
-private:
-	int SCL;
-	GPIO_PIN* clockpin;
+private:	/* private members are accessible only from within the same class or "friends" */
+	//	GPIO access
 	int SDA;
 	GPIO_PIN* datapin;
+	int SCL;
+	GPIO_PIN* clockpin;
+	//	logging
 	char NAME[128];
 	FILE* LOGFILE;
 	int LOGLEVEL;
-protected:
-public:
+	//	threading
+	pthread_t pthread_sniffing;
+	pthread_attr_t pthread_attributes;
+	bool pthread_stopping;
+	void pthread_stopp(void)
+	{
+		this->printLog(9,"pthread_stopp started\n");
+		//	set stopping flag
+		this->pthread_stopping = true;
+		//	destroy attribute
+		pthread_attr_destroy(&this->pthread_attributes);
+		//	wait for thread completion
+		pthread_join(this->pthread_sniffing, NULL);
+		this->printLog(9,"pthread_stopp done\n");
+	}
+	friend void *pthread_main(void *data);
+protected:	/* protected members are accessible from the same class or "friends" and derived classes */
+public:	/* public members are accessible from anywhere */
 	I2CSNIFFER(const char* arg1)
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s\n", "I2CSNIFFER constructor");
+		std::fprintf(stderr, "TRACE:\t%s\n", "I2CSNIFFER constructor");
 #endif
-		this->SCL = -1;	this->clockpin = NULL;
+		//	clear/init values
 		this->SDA = -1;	this->datapin = NULL;
+		this->SCL = -1;	this->clockpin = NULL;
 		memset(&this->NAME[0], '\0', sizeof(this->NAME));
-		size_t val = sscanf(arg1, "%d,%d,%s", &this->SCL, &this->SDA, &this->NAME[0]);
+		this->pthread_sniffing = 0;
+		this->pthread_stopping = true;
+		//	check argument
+		size_t val = sscanf(arg1, "%d,%d,%s", &this->SDA, &this->SCL, &this->NAME[0]);
 		if(3 > val)
 		{
 			//	no name specified
-			sprintf(&this->NAME[0], "I2C-%d,%d", this->SCL, this->SDA);
+			sprintf(&this->NAME[0], "I2C-%d,%d", this->SDA, this->SCL);
 		}
 		//	init, if pins given
-		if(-1 != this->SCL && -1 != this->SDA)
+		if(-1 != this->SDA && -1 != this->SCL)
 		{
-			this->clockpin = new GPIO_PIN(this->SCL);
 			this->datapin = new GPIO_PIN(this->SDA);
+			this->clockpin = new GPIO_PIN(this->SCL);
 		}
 		//	prepare log
 		this->LOGFILE = NULL;
 		this->LOGLEVEL = 3;
 		//	done
 #		if defined(DEBUG)
-		fprintf(stdout, "sniffer:\t%s\tSCL=%d,SDA=%d\n", this->NAME,this->SCL,this->SDA);
+		std::fprintf(stdout, "sniffer:\t%s\tSDA=%d,SCL=%d\n", this->NAME,this->SDA,this->SCL);
 #		endif
 	}
 	~I2CSNIFFER()
@@ -80,13 +106,17 @@ public:
 #if defined(TRACE)
 		std::fprintf(stderr, "TRACE:\t%s\n", "I2CSNIFFER destructor");
 #endif		
-		if(NULL != this->clockpin)
+		if(0 != this->pthread_sniffing)
 		{
-			delete(this->clockpin);
+			this->pthread_stopp();
 		}
 		if(NULL != this->datapin)
 		{
 			delete(this->datapin);
+		}
+		if(NULL != this->clockpin)
+		{
+			delete(this->clockpin);
 		}
 		if(NULL != this->LOGFILE)
 		{
@@ -95,36 +125,65 @@ public:
 	}
 	bool valid(void)
 	{
-		return(-1 != this->SCL && NULL != this->clockpin && -1 != this->SDA && NULL != this->datapin);
+		return(-1 != this->SDA && NULL != this->datapin && -1 != this->SCL && NULL != this->clockpin);
 	}
 	bool good(void)
 	{
-		return(this->valid() && this->clockpin->gpioGood() && this->datapin->gpioGood());
+		return(this->valid() && this->datapin->gpioGood() && this->clockpin->gpioGood());
+	}
+
+	//	start reading thread
+	int pthread_start(void)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s\n", "I2CSNIFFER pthread_start");
+#endif
+		//	prepare thread attributes
+		pthread_attr_init(&this->pthread_attributes);
+		pthread_attr_setdetachstate(&this->pthread_attributes, PTHREAD_CREATE_JOINABLE);
+		//	start thread
+		this->pthread_stopping = false;
+		int rc = pthread_create(&this->pthread_sniffing, &this->pthread_attributes, pthread_main, (void*)this);
+		if(0 > rc)
+		{
+			this->printLog(0,"pthread_create failed (%d==%s)\n", rc,"pthread_main");
+		}
+		else
+		{
+			this->printLog(9,"pthread_create started (%s)\n", "pthread_main");
+			sleep(1);	//	give time to start the thread
+		}
+		return(rc);
+	}
+
+	const char* GetName(void) const
+	{
+		return(&this->NAME[0]);
 	}
 
 	int prepareGPIO(void)
 	{
-		sniffer->printLog(6,"%s:\tprepareGPIO (SCL=%d,SDA=%d)\n", sniffer->TimeStamp() ,this->SCL,this->SDA);
+		this->printLog(6,"prepareGPIO (SDA=%d,SCL=%d)\n", this->SDA,this->SCL);
 		int value = 0;	//	0==OK
 		if(!this->valid())
 		{
 			return(PI_BAD_USER_GPIO);
 		}
-		else if(0 != (value=this->clockpin->gpioSetPullUpDown(PI_PUD_OFF)))
-		{
-			sniffer->printLog(0,"%s:\tprepareGPIO (%d==%s)\n", sniffer->TimeStamp() ,value,"clockpin->gpioSetPullUpDown(PI_PUD_OFF)");
-		}
-		else if(0 != (value=this->clockpin->gpioSetMode(PI_INPUT)))
-		{
-			sniffer->printLog(0,"%s:\tprepareGPIO (%d==%s)\n", sniffer->TimeStamp() ,value,"clockpin->gpioSetMode(PI_INPUT)");
-		}
 		else if(0 != (value=this->datapin->gpioSetPullUpDown(PI_PUD_OFF)))
 		{
-			sniffer->printLog(0,"%s:\tprepareGPIO (%d==%s)\n", sniffer->TimeStamp() ,value,"datapin->gpioSetPullUpDown(PI_PUD_OFF)");
+			this->printLog(0,"prepareGPIO (%d==%s)\n", value,"datapin->gpioSetPullUpDown(PI_PUD_OFF)");
 		}
 		else if(0 != (value=this->datapin->gpioSetMode(PI_INPUT)))
 		{
-			sniffer->printLog(0,"%s:\tprepareGPIO (%d==%s)\n", sniffer->TimeStamp() ,value,"datapin->gpioSetMode(PI_PUD_OFF)");
+			this->printLog(0,"prepareGPIO (%d==%s)\n", value,"datapin->gpioSetMode(PI_PUD_OFF)");
+		}
+		else if(0 != (value=this->clockpin->gpioSetPullUpDown(PI_PUD_OFF)))
+		{
+			this->printLog(0,"prepareGPIO (%d==%s)\n", value,"clockpin->gpioSetPullUpDown(PI_PUD_OFF)");
+		}
+		else if(0 != (value=this->clockpin->gpioSetMode(PI_INPUT)))
+		{
+			this->printLog(0,"prepareGPIO (%d==%s)\n", value,"clockpin->gpioSetMode(PI_INPUT)");
 		}
 		return(value);
 	}
@@ -166,6 +225,7 @@ public:
 	**	3	Daten
 	**	4,5	Datenanalyse
 	**	6,7	GPIO
+	**	8,9	INFO
 	*/
 	int SetLogLevel(int level=-1)
 	{
@@ -178,7 +238,7 @@ public:
 	int printLog(int level, const char * format, ... ) const
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s\t(%d<=%d)\n", "I2CSNIFFER printLog", level, this->LOGLEVEL);
+		std::fprintf(stderr, "TRACE:\t%s\t(%d<=%d)\n", "I2CSNIFFER printLog", level, this->LOGLEVEL);
 #endif
 		int written = 0;
 		if(level <= this->LOGLEVEL)
@@ -186,18 +246,18 @@ public:
 			va_list args;
 			va_start(args, format);
 			char message[200] = {0};
-			written = snprintf(&message[0],sizeof(message), "%s:\t", this->TimeStamp());
+			written = snprintf(&message[0],sizeof(message), "%s:\t%s\t", this->TimeStamp(), this->GetName());
 			written += vsnprintf(&message[written],sizeof(message)-written, format, args);
 			va_end(args);
-			fprintf(stdout, "%s", message);
-			if(NULL != this->LOGFILE)	fprintf(this->LOGFILE, "%s", message);
+			std::fprintf(stdout, "%s", message);
+			if(NULL != this->LOGFILE)	std::fprintf(this->LOGFILE, "%s", message);
 		}
 		return(written);
 	}
 
 	int bbI2COpen(unsigned value)
 	{
-		sniffer->printLog(6,"%s:\topen GPIO for I2C communication (SCL=%d,SDA=%d,fSCL=%d)\n", sniffer->TimeStamp() ,this->SCL,this->SDA,value);
+		this->printLog(6,"open GPIO for I2C communication (SDA=%d,SCL=%d,fSCL=%d)\n", this->SDA,this->SCL,value);
 		//	Returns 0 if OK, otherwise PI_BAD_USER_GPIO, PI_BAD_I2C_BAUD, or PI_GPIO_IN_USE.
 		if(0 > this->SDA || 0 > this->SCL)
 		{
@@ -207,7 +267,7 @@ public:
 	}
 	int bbI2CClose(void)
 	{
-		sniffer->printLog(6,"%s:\tclose GPIO from I2C communication\n", sniffer->TimeStamp());
+		this->printLog(6,"close GPIO from I2C communication\n");
 		//	Returns 0 if OK, otherwise PI_BAD_USER_GPIO, PI_BAD_I2C_BAUD, or PI_GPIO_IN_USE.
 		if(0 > this->SDA || 0 > this->SCL)
 		{
@@ -217,7 +277,7 @@ public:
 	}
 	int bbI2CZip(char *inBuf, unsigned inLen, char *outBuf, unsigned outLen)
 	{
-		sniffer->printLog(6,"%s:\tGPIO bitbanging I2C communication\n", sniffer->TimeStamp());
+		this->printLog(6,"GPIO bitbanging I2C communication\n");
 		/*	int bbI2CZip(char *inBuf, unsigned inLen, char *outBuf, unsigned outLen)
 		**	Returns >= 0 if OK (the number of bytes read)
 		**	otherwise PI_BAD_USER_GPIO, PI_NOT_I2C_GPIO, PI_BAD_POINTER, PI_BAD_I2C_CMD, PI_BAD_I2C_RLEN, PI_BAD_I2C_WLEN, PI_I2C_READ_FAILED, or PI_I2C_WRITE_FAILED
@@ -240,23 +300,34 @@ public:
 	}
 
 };
-void main_usage(const char* error = NULL, const char* arg0 = __FILE__)
+
+void main_usage(const char* error = NULL, const char* arg0 = __FILE__, const char* argX = NULL)
 {
-	fprintf(stderr, "%s (%s build %s %s)\n", arg0, __FILE__, __DATE__, __TIME__);
-	fprintf(stderr, "usage:\t%s %s\n", arg0, "[SCL,SDA[,NAME]]" );
-	fprintf(stderr, "\t%s %s\n", "SCL","is the GPIOx pin for clock" );
-	fprintf(stderr, "\t%s %s\n", "SDA","is the GPIOx pin for data" );
-	fprintf(stderr, "\t%s %s\n", "NAME","is the name to appear in output instead of GPIOx" );
-	fprintf(stderr, "\t%s\n", "For some functions, this program needs to be run as root." );
-	if(NULL != error)
+	std::fprintf(stderr, "%s (%s build %s %s)\n", arg0, __FILE__, __DATE__, __TIME__);
+	std::fprintf(stderr, "usage:\t%s %s %s\n", arg0, "[-l<file>]", "SDA,SCL[,NAME]" );
+	std::fprintf(stderr, "\t%s %s\n", "-l<file>","use <file> as log (DEFAULT=sniffer.log)" );
+	std::fprintf(stderr, "\t%s %s\n", "-L<level>","maximum level to log (DEFAULT=3, DEBUG=9)" );
+	std::fprintf(stderr, "\t%s %s\n", "SDA","is the GPIOx pin for data" );
+	std::fprintf(stderr, "\t%s %s\n", "SCL","is the GPIOx pin for clock" );
+	std::fprintf(stderr, "\t%s %s\n", "NAME","is the name to appear in output instead of GPIOx" );
+	std::fprintf(stderr, "\t%s\n", "For some functions, this program needs to be run as root." );
+	if(NULL != error && NULL != argX)
 	{
-		fprintf(stderr, "\nerror:\t%s\n\n", error);
+		std::fprintf(stderr, "\nerror:\t%s (%s)\n\n", error, argX);
+	}
+	else if(NULL != error)
+	{
+		std::fprintf(stderr, "\nerror:\t%s\n\n", error);
 	}
 }
+
 static volatile bool keep_running = true;
 #include <signal.h>
 static void signal_handler(int signum)
 {
+#if defined(TRACE)
+	std::fprintf(stderr, "TRACE:\t%s(%d)\n", "signal_handler", signum);
+#endif
 	switch (signum)
 	{
 		case SIGINT:
@@ -269,45 +340,142 @@ static void signal_handler(int signum)
 			break;
 	}
 }
+
+void *pthread_main(void *data)
+{
+	I2CSNIFFER* sniffer = (I2CSNIFFER*)data;	//	mother
+	sniffer->printLog(9,"pthread_main started\n");
+	//	running main work loop
+	while(keep_running && !sniffer->pthread_stopping)
+	{
+		sniffer->printLog(8,"pthread_main running\n");
+		sleep(10);
+	}
+	//	cleaning up
+	sniffer->pthread_sniffing = 0;
+	sniffer->printLog(9,"pthread_main stopped\n");
+	pthread_exit(NULL);
+}
+
 int main (int argc, char* argv[], char* envp[])
 {
-	fprintf(stdout, "%s (%s build %s)\n", argv[0], __FILE__, __DATE__);
+	std::fprintf(stdout, "%s (%s build %s)\n", argv[0], __FILE__, __DATE__);
 	(void)envp;	//	unused variable envp
 	//	check parameters
+	int argp = 1;	//	first parameter
 	if(2 > argc)
 	{
 		main_usage("no argument passed", argv[0]);
 	}
 	else
 	{
-		I2CSNIFFER* sniffer = new I2CSNIFFER(argv[1]);
-		if(!sniffer->valid())
+		//	parameters specified, so check them out
+		std::deque<I2CSNIFFER*> snifferline;	//	queue of sniffers
+		const char* logfile = NULL;
+		int loglevel = 3;	//	DEFAULT log level
+#		if defined(DEBUG)
+		loglevel = 9;	//	this will set maximum logging
+#		endif
+		for(argp=1; argp<argc; ++argp)
 		{
-			main_usage("invalid arguments passed", argv[0]);
+			if(0 == std::strncmp(argv[argp], "-l", 2))
+			{
+				//	-l<filename>
+				logfile = argv[argp] +2;	//	remember logfile name
+			}
+			else if(0 == std::strncmp(argv[argp], "-L", 2))
+			{
+				//	-L<level>
+				if(1 != sscanf(argv[argp] +2, "%d", &loglevel))
+				{
+					main_usage("invalid loglevel passed", argv[0], argv[argp]);
+				}
+			}
+			else if(NULL != std::strchr(argv[argp], ','))
+			{
+				//	SDA,SCL[,NAME]
+				snifferline.push_back(new I2CSNIFFER(argv[argp]));
+				if(!snifferline.back()->valid())
+				{
+					main_usage("invalid arguments passed", argv[0], snifferline.back()->GetName());
+					break;
+				}
+				else if(!snifferline.back()->good())
+				{
+					main_usage("could not initialize", argv[0], snifferline.back()->GetName());
+					break;
+				}
+			}
+			else //if(argv[argp])
+			{
+				main_usage("invalid argument passed", argv[0], argv[argp]);
+				break;
+			}
 		}
-		else if(!sniffer->good())
+		//	break, if error
+		if(!keep_running || argp != argc)
 		{
-			main_usage("could not initialize", argv[0]);
+			snifferline.clear();
+		}
+		//	now prepare the sniffers
+		for(size_t pos=0; pos<snifferline.size(); ++pos)
+		{
+			I2CSNIFFER* sniffer = snifferline[pos];
+			//	prepare log file
+			sniffer->SetLogFile(logfile);	//	this will open stdout and sniffer.log
+			sniffer->SetLogLevel(loglevel);	//	this will set highest logging
+			sniffer->printLog(2,"(%s) start sniffing for I2C communication\n", sniffer->TimeStampUTC());
+			//	prepare GPIO for sniffing
+			sniffer->prepareGPIO();
+		}
+		//	break, if error
+		if(!keep_running)
+		{
+			snifferline.clear();
 		}
 		else
 		{
 			//	prepare signal handler
-			signal(SIGPIPE, SIG_IGN);	//	ignore SIGPIPE
-			signal(SIGINT, signal_handler);
-			signal(SIGTERM, signal_handler);
-			signal(SIGQUIT, signal_handler);
-			signal(SIGHUP, signal_handler);	//	maybe i should ignore SIGHUP???
-			//	prepare log file
-			sniffer->SetLogFile();	//	this will open stdout and sniffer.log
-			sniffer->printLog(2,"%s:\t(%s) start sniffing for I2C communication\n", sniffer->TimeStamp(),sniffer->TimeStampUTC());
-			//	prepare GPIO for sniffing
-			sniffer->prepareGPIO();
-			//	running loop
-			while(keep_running)
+			sighandler_t shnd = SIG_ERR;
+			if(SIG_ERR == (shnd = signal(SIGPIPE, SIG_IGN)))	//	ignore SIGPIPE
 			{
+				std::fprintf(stderr, "signal failed (%s)\n", "SIGPIPE");
 			}
+			if(SIG_ERR == (shnd = signal(SIGINT, signal_handler)))
+			{
+				std::fprintf(stderr, "signal failed (%s)\n", "SIGINT");
+			}
+			if(SIG_ERR == (shnd = signal(SIGTERM, signal_handler)))
+			{
+				std::fprintf(stderr, "signal failed (%s)\n", "SIGTERM");
+			}
+			if(SIG_ERR == (shnd = signal(SIGQUIT, signal_handler)))
+			{
+				std::fprintf(stderr, "signal failed (%s)\n", "SIGQUIT");
+			}
+			if(SIG_ERR == (shnd = signal(SIGHUP, signal_handler)))	//	maybe i should ignore SIGHUP???
+			{
+				std::fprintf(stderr, "signal failed (%s)\n", "SIGHUP");
+			}
+		}
+		//	now start the sniffers
+		for(size_t pos=0; pos<snifferline.size(); ++pos)
+		{
+			I2CSNIFFER* sniffer = snifferline[pos];
+			//	running loop
+			sniffer->pthread_start();
+		}
+		//	wait for termination
+		while(keep_running && !snifferline.empty())
+		{
+			sleep(1);
+		}
+		while(!snifferline.empty())
+		{
+			I2CSNIFFER* sniffer = snifferline.front();
+			sniffer->printLog(2,"(%s) stopp sniffing\n", sniffer->TimeStampUTC());
 			//	cleanup and exit now
-			sniffer->printLog(2,"%s:\t(%s) stopp sniffing\n", sniffer->TimeStamp(),sniffer->TimeStampUTC());
+			snifferline.pop_front();
 		}
 	}
 	//	done
@@ -409,7 +577,7 @@ int main (int argc, char* argv[], char* envp[])
 	GPIO_PIN::GPIO_PIN(int pinnr)
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s\n", "GPIO_PIN constructor");
+		std::fprintf(stderr, "TRACE:\t%s\n", "GPIO_PIN constructor");
 #endif
 		this->gpiopin = -1;
 		this->gpioInitialise();
@@ -420,10 +588,10 @@ int main (int argc, char* argv[], char* envp[])
 		this->gpioTerminate();
 	};
 
-	int gpioGetMode(void)
+	int GPIO_PIN::gpioGetMode(void)
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s\n", "GPIO_PIN gpioGetMode");
+		std::fprintf(stderr, "TRACE:\t%s\n", "GPIO_PIN gpioGetMode");
 #endif
 		//	0==OK, PI_BAD_GPIO==error
 		if(0 > this->gpiopin)
@@ -432,10 +600,10 @@ int main (int argc, char* argv[], char* envp[])
 		}
 		return(::gpioGetMode(this->gpiopin));
 	}
-	int gpioSetMode(unsigned value)
+	int GPIO_PIN::gpioSetMode(unsigned value)
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioSetMode", value);
+		std::fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioSetMode", value);
 #endif
 		//	Returns 0 if OK, otherwise PI_BAD_GPIO or PI_BAD_MODE.
 		if(0 > this->gpiopin)
@@ -444,10 +612,10 @@ int main (int argc, char* argv[], char* envp[])
 		}
 		return(::gpioSetMode(this->gpiopin,value));
 	}
-	int gpioSetPullUpDown(unsigned value)
+	int GPIO_PIN::gpioSetPullUpDown(unsigned value)
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioSetPullUpDown", value);
+		std::fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioSetPullUpDown", value);
 #endif
 		//	0==OK, PI_BAD_GPIO==pin, PI_BAD_PUD==error
 		if(0 > this->gpiopin)
@@ -456,10 +624,10 @@ int main (int argc, char* argv[], char* envp[])
 		}
 		return(::gpioSetPullUpDown(this->gpiopin,value));
 	}
-	int gpioRead(void)
+	int GPIO_PIN::gpioRead(void)
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s\n", "GPIO_PIN gpioRead");
+		std::fprintf(stderr, "TRACE:\t%s\n", "GPIO_PIN gpioRead");
 #endif
 		//	0==OK, PI_BAD_GPIO==pin
 		if(0 > this->gpiopin)
@@ -468,10 +636,10 @@ int main (int argc, char* argv[], char* envp[])
 		}
 		return(::gpioRead(this->gpiopin));
 	}
-	int gpioWrite(unsigned value)
+	int GPIO_PIN::gpioWrite(unsigned value)
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioWrite", value);
+		std::fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioWrite", value);
 #endif
 		//	0==OK, PI_BAD_GPIO==pin, PI_BAD_LEVEL==error
 		if(0 > this->gpiopin)
@@ -484,7 +652,7 @@ int main (int argc, char* argv[], char* envp[])
 	bool GPIO_PIN::gpioGood(void) const
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioGood", this->gpiopin);
+		std::fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioGood", this->gpiopin);
 #endif
 		assert(0 < PIGPIO_UseCount);	//	init/terminate within constructor/destructor
 		return(PI_INIT_FAILED != PIGPIO_Version && 0 <= this->gpiopin);
@@ -493,7 +661,7 @@ int main (int argc, char* argv[], char* envp[])
 	int GPIO_PIN::CheckGPIOPIN(int pinnr) const
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN CheckGPIOPIN", pinnr);
+		std::fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN CheckGPIOPIN", pinnr);
 #endif
 		int value = -1;	//	DEFAULT return value PIN=INVALID
 		if( 0 <= pinnr && sizeof(GPIO_PIN_USAGE) > (unsigned int)pinnr && GPIO_USAGE_UNAVAIL != GPIO_PIN_USAGE[pinnr] )
@@ -506,7 +674,7 @@ int main (int argc, char* argv[], char* envp[])
 	void GPIO_PIN::gpioInitialise(void) const
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioInitialise", PIGPIO_UseCount);
+		std::fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioInitialise", PIGPIO_UseCount);
 #endif
 		if(0 > PIGPIO_UseCount)
 		{
@@ -543,7 +711,7 @@ int main (int argc, char* argv[], char* envp[])
 	void GPIO_PIN::gpioTerminate(void) const
 	{
 #if defined(TRACE)
-		fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioTerminate", PIGPIO_UseCount);
+		std::fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioTerminate", PIGPIO_UseCount);
 #endif
 		//	decrement and check
 		assert(0 < PIGPIO_UseCount);

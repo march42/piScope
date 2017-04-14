@@ -1,7 +1,7 @@
 # piScope
 **WIP**: Raspberry Pi controlled telescope with (orientation) 9DOF sensor and ST-4 guider port
 
-## Building, Installatoin, Running
+## Building, Installation, Running
 **Work In Progress** vermutlich noch zu nichts zu gebrauchen und unter Umständen auch nicht zum Laufen
 zu kriegen. *;)
 
@@ -19,7 +19,7 @@ meiner PIs steckt der PiHat (Astro Pi) der einen LSM9DS1 9DOF Sensor an Bord hat
 also tun, für die Endversion würde ich dann eventuell eher den Bosch BSO055 wählen.
 
 ## Credits
-* Stellarium findet man unter http://stellarium.org/
+* Stellarium findet man unter http://stellarium.org/ den Source unter https://launchpad.net/stellarium
 * GPIO handling erledigt die PIGPIO library http://abyz.co.uk/rpi/pigpio/
 * Infos zum BNO055 von Bosch gibt es dort https://www.bosch-sensortec.com/bst/products/all_products/bno055
 * Von Bosch gibt es eine library https://github.com/BoschSensortec/BNO055_driver
