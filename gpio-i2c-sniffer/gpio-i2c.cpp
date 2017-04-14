@@ -207,7 +207,7 @@ public:	/* public members are accessible from anywhere */
 	{
 		int sec = 0;
 		int ysec = 0;
-		::gpioTime(PI_TIME_RELATIVE, &sec,&ysec);
+		::gpioTime(PI_TIME_RELATIVE, &sec,&ysec);	//	direct calling, if clockpin,datapin not initialized before
 		static char value[20];
 		sprintf(&value[0], "%04d.%06d", sec,ysec);
 		return(&value[0]);
@@ -349,7 +349,7 @@ void *pthread_main(void *data)
 	while(keep_running && !sniffer->pthread_stopping)
 	{
 		sniffer->printLog(8,"pthread_main running\n");
-		sleep(10);
+		usleep(1);
 	}
 	//	cleaning up
 	sniffer->pthread_sniffing = 0;
@@ -582,6 +582,7 @@ int main (int argc, char* argv[], char* envp[])
 		this->gpiopin = -1;
 		this->gpioInitialise();
 		this->gpiopin = CheckGPIOPIN(pinnr);
+		this->notifyHandle = PI_NO_HANDLE;
 	};
 	GPIO_PIN::~GPIO_PIN()
 	{
@@ -647,6 +648,159 @@ int main (int argc, char* argv[], char* envp[])
 			return(PI_BAD_GPIO);
 		}
 		return(::gpioWrite(this->gpiopin,value));
+	}
+
+	int GPIO_PIN::gpioTrigger(int user_gpio, unsigned pulseLen, unsigned level)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s %d\n", "GPIO_PIN gpioTrigger", user_gpio);
+#endif
+		return(::gpioTrigger( (-1==user_gpio ?this->gpiopin :user_gpio) ,pulseLen,level));
+	}
+
+	uint32_t GPIO_PIN::gpioRead_Bits_0_31(void)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s\n", "gpioRead_Bits_0_31");
+#endif
+		return(::gpioRead_Bits_0_31());
+	}
+	uint32_t GPIO_PIN::gpioRead_Bits_32_53(void)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s\n", "gpioRead_Bits_32_53");
+#endif
+		return(::gpioRead_Bits_32_53());
+	}
+	int GPIO_PIN::gpioWrite_Bits_0_31_Clear(uint32_t value)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s %08X\n", "gpioWrite_Bits_0_31_Clear", value);
+#endif
+		return(::gpioWrite_Bits_0_31_Clear(value));
+	}
+	int GPIO_PIN::gpioWrite_Bits_32_53_Clear(uint32_t value)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s %08X\n", "gpioWrite_Bits_32_53_Clear", value);
+#endif
+		return(::gpioWrite_Bits_32_53_Clear(value));
+	}
+	int GPIO_PIN::gpioWrite_Bits_0_31_Set(uint32_t value)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s %08X\n", "gpioWrite_Bits_0_31_Set", value);
+#endif
+		return(::gpioWrite_Bits_0_31_Set(value));
+	}
+	int GPIO_PIN::gpioWrite_Bits_32_53_Set(uint32_t value)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s %08X\n", "gpioWrite_Bits_32_53_Set", value);
+#endif
+		return(::gpioWrite_Bits_32_53_Set(value));
+	}
+
+	int GPIO_PIN::gpioTime(unsigned timetype, int *seconds, int *micros)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s\n", "gpioTime");
+#endif
+		return(::gpioTime(timetype,seconds,micros));
+	}
+	int GPIO_PIN::gpioSleep(unsigned timetype, int seconds, int micros)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d.%06d)\n", "gpioSleep" ,seconds,micros);
+#endif
+		return(::gpioSleep(timetype,seconds,micros));
+	}
+	uint32_t GPIO_PIN::gpioDelay(uint32_t micros)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "gpioDelay" ,micros);
+#endif
+		return(::gpioDelay(micros));
+	}
+	uint32_t GPIO_PIN::gpioTick(void)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s\n", "gpioTick");
+#endif
+		return(::gpioTick());
+	}
+
+	int GPIO_PIN::gpioNotifyOpen(void)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s\n", "gpioNotifyOpen");
+#endif
+		if(PI_NO_HANDLE == this->notifyHandle)
+		{
+			this->notifyHandle = ::gpioNotifyOpen();
+		}
+		return(this->notifyHandle);
+	}
+	int GPIO_PIN::gpioNotifyClose(int handle)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "gpioNotifyClose" ,handle);
+#endif
+		int rc = PI_NO_HANDLE;
+		if(PI_NO_HANDLE != handle)
+		{
+			rc == ::gpioNotifyClose(handle);
+		}
+		else if(PI_NO_HANDLE != this->notifyHandle)
+		{
+			rc == ::gpioNotifyClose(this->notifyHandle);
+			this->notifyHandle = PI_NO_HANDLE;
+		}
+		return(rc);
+	}
+	int GPIO_PIN::gpioNotifyBegin(int handle, uint32_t bits)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d,%b)\n", "gpioNotifyBegin" ,handle,bits);
+#endif
+		return(::gpioNotifyBegin( (PI_NO_HANDLE==handle ?this->notifyHandle :handle) ,bits));
+	}
+	int GPIO_PIN::gpioNotifyPause(int handle)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "gpioNotifyPause" ,handle);
+#endif
+		return(::gpioNotifyPause( (PI_NO_HANDLE==handle ?this->notifyHandle :handle) ));
+	}
+
+	int GPIO_PIN::gpioSetAlertFunc(int user_gpio, gpioAlertFunc_t fnc)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "gpioSetAlertFunc" ,user_gpio);
+#endif
+		return(::gpioSetAlertFunc( (-1==user_gpio ?this->gpiopin :user_gpio) ,fnc));
+	}
+	int GPIO_PIN::gpioSetAlertFuncEx(int user_gpio, gpioAlertFuncEx_t fnc, void *userdata)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "gpioSetAlertFuncEx" ,user_gpio);
+#endif
+		return(::gpioSetAlertFuncEx( (-1==user_gpio ?this->gpiopin :user_gpio) ,fnc, (NULL==userdata ?this :userdata) ));
+	}
+
+	int GPIO_PIN::gpioSetISRFunc(int user_gpio, unsigned edge, int timeout, gpioISRFunc_t fnc);
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "gpioSetISRFunc" ,user_gpio);
+#endif
+		return(::gpioSetISRFunc( (-1==user_gpio ?this->gpiopin :user_gpio) ,edge,timeout,fnc));
+	}
+	int GPIO_PIN::gpioSetISRFuncEx(int user_gpio, unsigned edge, int timeout, gpioISRFuncEx_t fnc, void *userdata);
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "gpioSetISRFuncEx" ,user_gpio);
+#endif
+		return(::gpioSetISRFuncEx( (-1==user_gpio ?this->gpiopin :user_gpio) ,edge,timeout,fnc, (NULL==userdata ?this :userdata) ));
 	}
 
 	bool GPIO_PIN::gpioGood(void) const

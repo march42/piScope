@@ -41,6 +41,30 @@ public:	/* public members are accessible from anywhere */
 	//	PIN manipulation
 	int gpioRead(void);
 	int gpioWrite(unsigned value);
+	int gpioTrigger(int user_gpio = -1, unsigned pulseLen, unsigned level = 1);
+	//	bank manipulation
+	uint32_t gpioRead_Bits_0_31(void);
+	uint32_t gpioRead_Bits_32_53(void);
+	int gpioWrite_Bits_0_31_Clear(uint32_t value);
+	int gpioWrite_Bits_32_53_Clear(uint32_t value);
+	int gpioWrite_Bits_0_31_Set(uint32_t value);
+	int gpioWrite_Bits_32_53_Set(uint32_t value);
+	//	timing
+	int gpioTime(unsigned timetype, int *seconds, int *micros);
+	int gpioSleep(unsigned timetype, int seconds, int micros);
+	uint32_t gpioDelay(uint32_t micros);
+	uint32_t gpioTick(void);
+	//	notfication
+	int gpioNotifyOpen(void);	//	buffers handle to this->notifyHandle
+	int gpioNotifyClose(int handle = PI_BAD_HANDLE);
+	int gpioNotifyBegin(int handle = PI_BAD_HANDLE, uint32_t bits);
+	int gpioNotifyPause(int handle = PI_BAD_HANDLE);
+	//	alert
+	int gpioSetAlertFunc(int user_gpio = -1, gpioAlertFunc_t fnc);
+	int gpioSetAlertFuncEx(int user_gpio = -1, gpioAlertFuncEx_t fnc, void *userdata = NULL);
+	//	interrupt
+	int gpioSetISRFunc(int user_gpio = -1, unsigned edge, int timeout, gpioISRFunc_t fnc);
+	int gpioSetISRFuncEx(int user_gpio = -1, unsigned edge, int timeout, gpioISRFuncEx_t fnc, void *userdata = NULL);
 	//	status checking
 	bool gpioGood(void) const;
 
@@ -48,6 +72,8 @@ protected:	/* protected members are accessible from the same class or "friends" 
 	//	GPIO PIN number handling
 	int gpiopin;	//	-1=INVALID
 	int CheckGPIOPIN(int pinnr=-1) const;
+	//	internal notification
+	int notifyHandle;
 
 private:	/* private members are accessible only from within the same class or "friends" */
 	//	PIGPIO init/terminate
