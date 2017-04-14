@@ -35,48 +35,48 @@ public:	/* public members are accessible from anywhere */
 	GPIO_PIN(int pinnr=-1);
 	~GPIO_PIN();
 	//	PIN preparation and setup
-	int gpioGetMode(void);
-	int gpioSetMode(unsigned value);
-	int gpioSetPullUpDown(unsigned value);
+	int gpioGetMode(void) const;
+	int gpioSetMode(unsigned value) const;
+	int gpioSetPullUpDown(unsigned value) const;
 	//	PIN manipulation
-	int gpioRead(void);
-	int gpioWrite(unsigned value);
-	int gpioTrigger(int user_gpio = -1, unsigned pulseLen, unsigned level = 1);
+	int gpioRead(void) const;
+	int gpioWrite(unsigned value) const;
+	int gpioTrigger(unsigned pulseLen, unsigned level) const;
 	//	bank manipulation
-	uint32_t gpioRead_Bits_0_31(void);
-	uint32_t gpioRead_Bits_32_53(void);
-	int gpioWrite_Bits_0_31_Clear(uint32_t value);
-	int gpioWrite_Bits_32_53_Clear(uint32_t value);
-	int gpioWrite_Bits_0_31_Set(uint32_t value);
-	int gpioWrite_Bits_32_53_Set(uint32_t value);
+	uint32_t gpioRead_Bits_0_31(void) const;
+	uint32_t gpioRead_Bits_32_53(void) const;
+	int gpioWrite_Bits_0_31_Clear(uint32_t value) const;
+	int gpioWrite_Bits_32_53_Clear(uint32_t value) const;
+	int gpioWrite_Bits_0_31_Set(uint32_t value) const;
+	int gpioWrite_Bits_32_53_Set(uint32_t value) const;
 	//	timing
-	int gpioTime(unsigned timetype, int *seconds, int *micros);
-	int gpioSleep(unsigned timetype, int seconds, int micros);
-	uint32_t gpioDelay(uint32_t micros);
-	uint32_t gpioTick(void);
+	int gpioTime(unsigned timetype, int *seconds, int *micros) const;
+	int gpioSleep(unsigned timetype, int seconds, int micros) const;
+	uint32_t gpioDelay(uint32_t micros) const;
+	uint32_t gpioTick(void) const;
 	//	notfication
 	int gpioNotifyOpen(void);	//	buffers handle to this->notifyHandle
-	int gpioNotifyClose(int handle = PI_BAD_HANDLE);
-	int gpioNotifyBegin(int handle = PI_BAD_HANDLE, uint32_t bits);
-	int gpioNotifyPause(int handle = PI_BAD_HANDLE);
+	int gpioNotifyClose(void);
+	int gpioNotifyBegin(uint32_t bits) const;
+	int gpioNotifyPause(void) const;
 	//	events
-	int eventMonitor(int handle = PI_BAD_HANDLE, uint32_t bits);
-	int eventSetFunc(unsigned event, eventFunc_t fnc);
-	int eventSetFuncEx(unsigned event, eventFuncEx_t fnc, void *userdata = NULL);
-	int eventTrigger(unsigned event);
+	int eventMonitor(uint32_t bits) const;
+	int eventSetFunc(unsigned event, eventFunc_t fnc) const;
+	int eventSetFuncEx(unsigned event, eventFuncEx_t fnc, void *userdata);
+	int eventTrigger(unsigned event) const;
 	//	alert
-	int gpioSetAlertFunc(int user_gpio = -1, gpioAlertFunc_t fnc);
-	int gpioSetAlertFuncEx(int user_gpio = -1, gpioAlertFuncEx_t fnc, void *userdata = NULL);
+	int gpioSetAlertFunc(gpioAlertFunc_t fnc) const;
+	int gpioSetAlertFuncEx(gpioAlertFuncEx_t fnc, void *userdata);
 	//	interrupt
-	int gpioSetISRFunc(int user_gpio = -1, unsigned edge, int timeout, gpioISRFunc_t fnc);
-	int gpioSetISRFuncEx(int user_gpio = -1, unsigned edge, int timeout, gpioISRFuncEx_t fnc, void *userdata = NULL);
+	int gpioSetISRFunc(unsigned edge, int timeout, gpioISRFunc_t fnc) const;
+	int gpioSetISRFuncEx(unsigned edge, int timeout, gpioISRFuncEx_t fnc, void *userdata);
 	//	status checking
 	bool gpioGood(void) const;
 
 protected:	/* protected members are accessible from the same class or "friends" and derived classes */
 	//	GPIO PIN number handling
 	int gpiopin;	//	-1=INVALID
-	int CheckGPIOPIN(int pinnr=-1) const;
+	int CheckGPIOPIN(int pinnr = -1) const;
 	//	internal notification
 	int notifyHandle;
 
