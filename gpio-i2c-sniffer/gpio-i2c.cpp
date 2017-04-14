@@ -38,7 +38,7 @@
 **	main routine
 **		sniffer [SDA,SCL[,NAME]] ...
 */
-void *pthread_main(void *data);	//	prototype
+void *pthread_main(void *data);	//	prototype, must be declared before the other functions for reference
 class I2CSNIFFER //: protected GPIO_PIN
 {
 private:	/* private members are accessible only from within the same class or "friends" */
@@ -773,6 +773,35 @@ int main (int argc, char* argv[], char* envp[])
 		return(::gpioNotifyPause( (PI_NO_HANDLE==handle ?this->notifyHandle :handle) ));
 	}
 
+	int eventMonitor(int handle, uint32_t bits)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d,%b)\n", "eventMonitor" ,handle,bits);
+#endif
+		return(::eventMonitor( (PI_NO_HANDLE==handle ?this->notifyHandle :handle) ,bits));
+	}
+	int eventSetFunc(unsigned event, eventFunc_t fnc)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "eventSetFunc" ,event);
+#endif
+		return(::eventSetFunc(event, fnc));
+	}
+	int eventSetFuncEx(unsigned event, eventFuncEx_t fnc, void *userdata)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "eventSetFuncEx" ,event);
+#endif
+		return(::eventSetFuncEx(event, fnc, (NULL==userdata ?this :userdata) ));
+	}
+	int eventTrigger(unsigned event)
+	{
+#if defined(TRACE)
+		std::fprintf(stderr, "TRACE:\t%s (%d)\n", "eventTrigger" ,event);
+#endif
+		return(::eventTrigger(event));
+	}
+
 	int GPIO_PIN::gpioSetAlertFunc(int user_gpio, gpioAlertFunc_t fnc)
 	{
 #if defined(TRACE)
@@ -856,7 +885,11 @@ int main (int argc, char* argv[], char* envp[])
 			*/
 			//	configure access interfaces
 			::gpioCfgInterfaces(PI_DISABLE_FIFO_IF | PI_DISABLE_SOCK_IF|PI_LOCALHOST_SOCK_IF);
-			//::gpioCfgSocketPort(8888);	//	DEFAULT socket port =8888
+			/*	socket not used, so no need to set safe values
+			::gpioCfgSocketPort(8888);	//	DEFAULT socket port =8888
+			uint32_t sockAddr[] = {INADDR_LOOPBACK};
+			::gpioCfgNetAddr(1, &sockAddr);
+			*/
 			//	call PIGPIO init
 			PIGPIO_Version = ::gpioInitialise();
 		}

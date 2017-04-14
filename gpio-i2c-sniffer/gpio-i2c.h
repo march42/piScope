@@ -59,6 +59,11 @@ public:	/* public members are accessible from anywhere */
 	int gpioNotifyClose(int handle = PI_BAD_HANDLE);
 	int gpioNotifyBegin(int handle = PI_BAD_HANDLE, uint32_t bits);
 	int gpioNotifyPause(int handle = PI_BAD_HANDLE);
+	//	events
+	int eventMonitor(int handle = PI_BAD_HANDLE, uint32_t bits);
+	int eventSetFunc(unsigned event, eventFunc_t fnc);
+	int eventSetFuncEx(unsigned event, eventFuncEx_t fnc, void *userdata = NULL);
+	int eventTrigger(unsigned event);
 	//	alert
 	int gpioSetAlertFunc(int user_gpio = -1, gpioAlertFunc_t fnc);
 	int gpioSetAlertFuncEx(int user_gpio = -1, gpioAlertFuncEx_t fnc, void *userdata = NULL);
