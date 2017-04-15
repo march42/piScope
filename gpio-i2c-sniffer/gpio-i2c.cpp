@@ -307,7 +307,7 @@ void *pthread_main(void *data)
 	I2CSNIFFER* sniffer = (I2CSNIFFER*)data;	//	mother
 	sniffer->printLog(9,"pthread_main started\n");
 	//	running main work loop
-	while(keep_running && !sniffer->pthread_stopping)
+	while(!sniffer->pthread_stopping && keep_running)
 	{
 		sniffer->printLog(8,"pthread_main running\n");
 		usleep(1);
@@ -323,7 +323,7 @@ void main_usage(const char* error = NULL, const char* arg0 = __FILE__, const cha
 	std::fprintf(stderr, "%s (%s build %s %s)\n", arg0, __FILE__, __DATE__, __TIME__);
 	std::fprintf(stderr, "usage:\t%s %s %s\n", arg0, "[-l<file>]", "SDA,SCL[,NAME]" );
 	std::fprintf(stderr, "\t%s %s\n", "-l<file>","use <file> as log (DEFAULT=sniffer.log)" );
-	std::fprintf(stderr, "\t%s %s\n", "-L<level>","maximum level to log (DEFAULT=3, DEBUG=9)" );
+	std::fprintf(stderr, "\t%s %s\n", "-L<level>","maximum level to log (DEFAULT=3)" );
 	std::fprintf(stderr, "\t%s %s\n", "SDA","is the GPIOx pin for data" );
 	std::fprintf(stderr, "\t%s %s\n", "SCL","is the GPIOx pin for clock" );
 	std::fprintf(stderr, "\t%s %s\n", "NAME","is the name to appear in output instead of GPIOx" );
@@ -373,9 +373,6 @@ int main (int argc, char* argv[], char* envp[])
 		std::deque<I2CSNIFFER*> snifferline;	//	queue of sniffers
 		const char* logfile = NULL;
 		int loglevel = 3;	//	DEFAULT log level
-#		if defined(DEBUG)
-		loglevel = 9;	//	this will set maximum logging
-#		endif
 		for(argp=1; argp<argc; ++argp)
 		{
 			if(0 == std::strncmp(argv[argp], "-l", 2))
