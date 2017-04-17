@@ -30,5 +30,10 @@ test:
 clean:
 	-for dir in $(SUBDIRS); do $(MAKE) -C $$dir clean; done
 
-$(SUBDIRS):
+/usr/lib/libpigpio.so /usr/include/pigpio.h:
+	git clone https://github.com/joan2937/pigpio
+	$(MAKE) -C $@ all
+	sudo prefix=/usr $(MAKE) -C $@ install
+
+$(SUBDIRS): /usr/include/pigpio.h
 	$(MAKE) -C $@
