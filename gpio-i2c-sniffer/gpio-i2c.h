@@ -65,10 +65,10 @@ public:	/* public members are accessible from anywhere */
 	int eventSetFuncEx(unsigned event, eventFuncEx_t fnc, void *userdata);
 	int eventTrigger(unsigned event) const;
 	//	alert
-	int gpioSetAlertFunc(gpioAlertFunc_t fnc) const;
+	int gpioSetAlertFunc(gpioAlertFunc_t fnc);
 	int gpioSetAlertFuncEx(gpioAlertFuncEx_t fnc, void *userdata);
 	//	interrupt
-	int gpioSetISRFunc(unsigned edge, int timeout, gpioISRFunc_t fnc) const;
+	int gpioSetISRFunc(unsigned edge, int timeout, gpioISRFunc_t fnc);
 	int gpioSetISRFuncEx(unsigned edge, int timeout, gpioISRFuncEx_t fnc, void *userdata);
 	//	status checking
 	bool gpioGood(void) const;
@@ -79,6 +79,9 @@ protected:	/* protected members are accessible from the same class or "friends" 
 	int CheckGPIOPIN(int pinnr = -1) const;
 	//	internal notification
 	int notifyHandle;
+	//	internal marker/flag
+	int RegisteredAlert;
+	int RegisteredISR;
 
 private:	/* private members are accessible only from within the same class or "friends" */
 	//	PIGPIO init/terminate

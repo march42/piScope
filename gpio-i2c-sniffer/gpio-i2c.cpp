@@ -38,7 +38,164 @@
 **	main routine
 **		sniffer [SDA,SCL[,NAME]] ...
 */
-void *pthread_main(void *data);	//	prototype, must be declared before the other functions for reference
+void alert_GPIO (int event, int level, uint32_t tick, void *userdata);
+void *pthread_main (void *data);	//	prototype, must be declared before the other functions for reference
+
+typedef enum __I2CDATA_TYPE_ENUM
+{
+	I2CDATA_TYPE_INVALID = -1,
+	I2CDATA_TYPE_EMPTY = 0,
+	I2CDATA_TYPE_START,
+	I2CDATA_TYPE_STOP,
+	I2CDATA_TYPE_REPEATEDSTART,
+	I2CDATA_TYPE_ADDRESS,
+	I2CDATA_TYPE_DATA,
+	I2CDATA_TYPE_ADDRESS2,
+}	I2CDATA_TYPE;
+
+class I2CDATA
+{
+private:	/* private members are accessible only from within the same class or "friends" */
+protected:	/* protected members are accessible from the same class or "friends" and derived classes */
+public:	/* public members are accessible from anywhere */
+	/*I2CDATA(void)
+	{
+		this->Type = I2CDATA_TYPE_INVALID;
+		this->Sequence = 0;
+		this->BitCount = 0;
+		this->Bits = 0x00;
+		this->ACK = 0;
+	}*/
+	I2CDATA(int sequence=0, int type=I2CDATA_TYPE_INVALID)
+	{
+		this->Type = (I2CDATA_TYPE)type;
+		this->Sequence = sequence;
+		this->BitCount = 0;
+		this->Bits = 0x00;
+		this->ACK = 0;
+	}
+	~I2CDATA()
+	{
+	}
+	//	buffer variables
+	I2CDATA_TYPE Type;
+	int Sequence;
+	int BitCount;
+	uint8_t Bits;
+	uint8_t ACK;
+	//	access methods
+	void SetStart(void)
+	{
+		this->Type = I2CDATA_TYPE_START;
+	}
+	void SetStop(void)
+	{
+		this->Type = I2CDATA_TYPE_STOP;
+	}
+	void SetRepStart(void)
+	{
+		this->Type = I2CDATA_TYPE_REPEATEDSTART;
+	}
+	void SetAddress(void)
+	{
+		this->Type = I2CDATA_TYPE_ADDRESS;
+	}
+	void SetData(void)
+	{
+		this->Type = I2CDATA_TYPE_DATA;
+	}
+	void SetAddress2(void)
+	{
+		this->Type = I2CDATA_TYPE_ADDRESS2;
+	}
+	void SetBit(int bit)
+	{
+		if(8 < this->BitCount)
+		{
+			//	error, more than 8 data + 1 ack bit
+		}
+		else if(8 == this->BitCount)
+		{
+			this->ACK = bit &0x01;
+		}
+		else
+		{
+			this->Bits <<= 1;
+			this->Bits |= bit &0x01;
+		}
+		++this->BitCount;
+	}
+	void SetACK(int bit)
+	{
+		this->ACK = bit &0x01;
+	}
+	bool IsComplete(void)
+	{
+		if(I2CDATA_TYPE_START == this->Type || I2CDATA_TYPE_STOP == this->Type || I2CDATA_TYPE_REPEATEDSTART == this->Type)
+		{
+			return(true);
+		}
+		else if(9 == this->BitCount && (I2CDATA_TYPE_ADDRESS == this->Type || I2CDATA_TYPE_DATA == this->Type || I2CDATA_TYPE_ADDRESS2 == this->Type))
+		{
+			return(true);
+		}
+		return(false);
+	}
+	bool IsStart(void)
+	{
+		if(I2CDATA_TYPE_START == this->Type || I2CDATA_TYPE_REPEATEDSTART == this->Type)
+		{
+			return(true);
+		}
+		return(false);
+	}
+	bool IsStop(void)
+	{
+		return(I2CDATA_TYPE_STOP == this->Type);
+	}
+
+	/*	I2C reserved SLA slave address
+	**	SLAx.xxx	R/W	purpose description
+	**	0000 000	0	general call address
+	**	0000 000	1	START byte
+	**	0000 001	x	CBUS address
+	**	0000 010	x	reserved for differend bus format
+	**	0000 011	x	reserved for future purpose
+	**	0000 1xx	x	HS mode master code
+	**	1111 1xx	1	device ID
+	**	1111 0xx	x	10bit slave addressing
+	*/
+	const char* ToString(void)
+	{
+		const char* type[] = { "EMPTY","START","STOP","REPSTART","SLA","DATA","SLA2" };
+		const char* ack_nack[] = { "ACK","NACK" };
+		const char* read_write[] = { "READ","WRITE" };
+		static char buffer[20] = { '\0' };
+		if(I2CDATA_TYPE_EMPTY > this->Type)
+		{
+			return("INVALID");
+		}
+		else if(I2CDATA_TYPE_ADDRESS > this->Type)
+			//	|| I2CDATA_TYPE_EMPTY == this->Type || I2CDATA_TYPE_START == this->Type || I2CDATA_TYPE_STOP == this->Type || I2CDATA_TYPE_REPEATEDSTART == this->Type
+		{
+			return(type[this->Type]);
+		}
+		else if(I2CDATA_TYPE_ADDRESS == this->Type)
+		{
+			std::sprintf(&buffer[0], "%s=%02X %s %s", type[this->Type], (this->Bits >>1)&0x7F, read_write[this->Bits &0x01], ack_nack[this->ACK]);
+		}
+		else if(I2CDATA_TYPE_DATA == this->Type || I2CDATA_TYPE_ADDRESS2 == this->Type)
+		{
+			std::sprintf(&buffer[0], "%s=%02X %s", type[this->Type], this->Bits, ack_nack[this->ACK]);
+		}
+		else if(I2CDATA_TYPE_INVALID == this->Type)
+		{
+			return("INVALID");
+		}
+		return( &buffer[0] );
+	}
+};
+
 class I2CSNIFFER //: protected GPIO_PIN
 {
 private:	/* private members are accessible only from within the same class or "friends" */
@@ -67,6 +224,19 @@ private:	/* private members are accessible only from within the same class or "f
 		this->printLog(9,"pthread_stopp done\n");
 	}
 	friend void *pthread_main(void *data);
+	//	alert callback and data handling
+	bool alert_lastLevel_SDA;
+	uint32_t alert_lastTickH_SDA;
+	uint32_t alert_lastTickL_SDA;
+	bool alert_lastLevel_SCL;
+	uint32_t alert_lastTickH_SCL;
+	uint32_t alert_lastTickL_SCL;
+	uint32_t alert_tAverage_SCL;
+	uint32_t alert_frequency_SCL;
+	I2CDATA* alert_CurrentData;
+	std::deque<I2CDATA*> alert_CurrentQueue;	//	i2c incomming buffer queue
+	std::deque<I2CDATA*> alert_DataQueue;	//	i2c data queue
+	friend void alert_GPIO (int alert, int level, uint32_t tick, void *userdata);
 protected:	/* protected members are accessible from the same class or "friends" and derived classes */
 public:	/* public members are accessible from anywhere */
 	I2CSNIFFER(const char* arg1)
@@ -79,6 +249,7 @@ public:	/* public members are accessible from anywhere */
 		this->SCL = -1;	this->clockpin = NULL;
 		memset(&this->NAME[0], '\0', sizeof(this->NAME));
 		this->pthread_sniffing = 0;
+		this->alert_CurrentData = NULL;
 		this->pthread_stopping = true;
 		//	check argument
 		size_t val = sscanf(arg1, "%d,%d,%s", &this->SDA, &this->SCL, &this->NAME[0]);
@@ -152,6 +323,40 @@ public:	/* public members are accessible from anywhere */
 		{
 			this->printLog(9,"pthread_create started (%s)\n", "pthread_main");
 			sleep(1);	//	give time to start the thread
+		}
+		return(rc);
+	}
+
+	//	prepare and start alert handler
+	int alert_start(void)
+	{
+		//	initialize data
+		this->alert_lastLevel_SDA = (0 != this->datapin->gpioRead());
+		this->alert_lastTickH_SDA = gpioTick();
+		this->alert_lastTickL_SDA = gpioTick();
+		this->alert_lastLevel_SCL = (0 != this->clockpin->gpioRead());
+		this->alert_lastTickH_SCL = gpioTick();
+		this->alert_lastTickL_SCL = gpioTick();
+		this->alert_tAverage_SCL = 0;	//	only counting rising edge
+		this->alert_frequency_SCL = 0;	//	only counting rising edge (((9*average) + current) / 10)
+		this->alert_CurrentData = NULL;
+		this->alert_CurrentQueue.clear();
+		//	register alert handler
+		int rc = PI_BAD_EVENT_ID;
+		if(PI_BAD_EVENT_ID == (rc = this->clockpin->gpioSetAlertFuncEx(&alert_GPIO, (void*)this)))
+		{
+			//	register alert for SCL failed
+			this->printLog(0,"gpioSetAlertFuncEx failed (%d==%s)\n", rc,"SCL");
+		}
+		else if(PI_BAD_EVENT_ID == (rc = this->datapin->gpioSetAlertFuncEx(&alert_GPIO, (void*)this)))
+		{
+			//	register alert for SDA failed
+			this->printLog(0,"gpioSetAlertFuncEx failed (%d==%s)\n", rc,"SDA");
+			this->clockpin->gpioSetAlertFuncEx(NULL,NULL);	//	unregister SCL alert
+		}
+		else
+		{
+			this->printLog(9,"alert for GPIO SCL+SDA registered\n");
 		}
 		return(rc);
 	}
@@ -316,6 +521,141 @@ void *pthread_main(void *data)
 	sniffer->pthread_sniffing = 0;
 	sniffer->printLog(9,"pthread_main stopped\n");
 	pthread_exit(NULL);
+}
+
+void alert_GPIO (int event, int level, uint32_t tick, void *userdata)
+{
+	I2CSNIFFER* sniffer = (I2CSNIFFER*)userdata;	//	mother
+	//	prepare buffer (end previous byte/sequence and start new)
+	static int ByteCount = 0;
+	sniffer->printLog(7,"alert_GPIO %d=%d\n", event,level);
+	if(NULL == sniffer->alert_CurrentData)
+	{
+		sniffer->alert_CurrentData = new I2CDATA(ByteCount++,I2CDATA_TYPE_EMPTY);
+	}
+	//sniffer->alert_CurrentData = NULL;
+	//sniffer->alert_CurrentQueue.clear();
+	//	SCL rising edge
+	if(event == sniffer->SCL && 1 == level)
+	{
+		//	timing calculations (1 tick = 1ys = 1/1000000s)
+		uint32_t tSCL = tick - sniffer->alert_lastTickH_SCL;
+		sniffer->alert_tAverage_SCL *= 15;
+		sniffer->alert_tAverage_SCL += tSCL;
+		sniffer->alert_tAverage_SCL /= 16;
+		sniffer->alert_frequency_SCL = 1000*1000 / sniffer->alert_tAverage_SCL;
+		//	remember level
+		sniffer->alert_lastLevel_SCL = true;
+		//	bit or stop starting
+		if(1 == ByteCount)
+		{
+			sniffer->alert_CurrentData->SetAddress();
+		}
+		else if(2 == ByteCount && 0xF0 == (sniffer->alert_CurrentQueue.back()->Bits &0xF8))
+		{
+			sniffer->alert_CurrentData->SetAddress2();
+		}
+		else if(1 < ByteCount)
+		{
+			sniffer->alert_CurrentData->SetData();
+		}
+	}
+	//	SCL falling edge
+	else if(event == sniffer->SCL && 0 == level)
+	{
+		//	timing calculations (1 tick = 1ys = 1/1000000s)
+		uint32_t tSCL = tick - sniffer->alert_lastTickL_SCL;
+		//	remember level
+		sniffer->alert_lastLevel_SCL = false;
+		//	bit ending or start done
+		if(tSCL > tick - sniffer->alert_lastTickH_SDA || tSCL > tick - sniffer->alert_lastTickL_SDA)
+		{
+			/*	tSCSL > tick - sniffer->alert_lastTickH_SDA
+			**	SDA rising while SCL high
+			**	tSCSL > tick - sniffer->alert_lastTickL_SDA
+			**	SDA falling while SCL high
+			*/
+			//	SDA changed while SCL high
+		}
+		else //if(8 > sniffer->alert_CurrentData->BitCount)
+		{
+			//	data bit ended
+			sniffer->alert_CurrentData->SetBit(sniffer->alert_lastLevel_SDA);
+		}
+		//sniffer->alert_lastLevel_SDA
+	}
+	//	SDA rising edge
+	else if(event == sniffer->SDA && 1 == level)
+	{
+		//	timing calculations (1 tick = 1ys = 1/1000000s)
+		//uint32_t tSDA = tick - sniffer->alert_lastTickH_SDA;
+		//	remember level
+		sniffer->alert_lastLevel_SDA = true;
+		//	STOP is rising while SCL high
+		if(sniffer->alert_lastLevel_SCL)
+		{
+			sniffer->alert_CurrentData->SetStop();
+		}
+		//	ignore SDA change, while SCL low
+		else if(!sniffer->alert_lastLevel_SCL)
+		{
+		}
+	}
+	//	SDA falling edge
+	else if(event == sniffer->SDA && 0 == level)
+	{
+		//	timing calculations (1 tick = 1ys = 1/1000000s)
+		//uint32_t tSDA = tick - sniffer->alert_lastTickL_SDA;
+		//	remember level
+		sniffer->alert_lastLevel_SDA = false;
+		//	START is falling while SCL high
+		if(0 == ByteCount && sniffer->alert_lastLevel_SCL)
+		{
+			sniffer->alert_CurrentData->SetStart();
+		}
+		else if(sniffer->alert_lastLevel_SCL)
+		{
+			sniffer->alert_CurrentData->SetRepStart();
+		}
+		//	ignore SDA change, while SCL low
+		else if(!sniffer->alert_lastLevel_SCL)
+		{
+		}
+	}
+	/*
+	bool alert_lastLevel_SDA;
+	uint32_t alert_lastTick_SDA;
+	bool alert_lastLevel_SCL;
+	uint32_t alert_lastTick_SCL;
+	uint32_t alert_frequency_SCL;
+	I2CDATA* alert_CurrentData;
+	std::deque<I2CDATA*> alert_CurrentQueue;	//	i2c incomming buffer queue
+	std::deque<I2CDATA*> alert_DataQueue;	//	i2c data queue
+	*/
+	//	push to queue
+	if(NULL == sniffer->alert_CurrentData)
+	{
+		//	no data
+	}
+	else if(sniffer->alert_CurrentData->IsComplete())
+	{
+		sniffer->printLog(6,"alert_GPIO %d=%d\n", sniffer->alert_CurrentData->Sequence,sniffer->alert_CurrentData->ToString());
+		sniffer->alert_CurrentQueue.push_back(sniffer->alert_CurrentData);
+		sniffer->alert_CurrentData = NULL;
+		//	sequence ended
+		if(sniffer->alert_CurrentQueue.back()->IsStop())
+		{
+			// restart counter
+			ByteCount = 0;
+			//	push to buffer
+			while(!sniffer->alert_CurrentQueue.empty())
+			{
+				sniffer->alert_DataQueue.push_back(sniffer->alert_CurrentQueue.front());
+				sniffer->alert_CurrentQueue.pop_front();
+			}
+		}
+	}
+	//	done
 }
 
 void main_usage(const char* error = NULL, const char* arg0 = __FILE__, const char* argX = NULL)
@@ -580,6 +920,8 @@ int main (int argc, char* argv[], char* envp[])
 		this->gpioInitialise();
 		this->gpiopin = CheckGPIOPIN(pinnr);
 		this->notifyHandle = PI_NO_HANDLE;
+		this->RegisteredAlert = PI_BAD_EVENT_ID;
+		this->RegisteredISR = PI_BAD_ISR_INIT;
 	};
 	GPIO_PIN::~GPIO_PIN()
 	{
@@ -789,34 +1131,38 @@ int main (int argc, char* argv[], char* envp[])
 		return(::eventTrigger(event));
 	}
 
-	int GPIO_PIN::gpioSetAlertFunc(gpioAlertFunc_t fnc) const
+	int GPIO_PIN::gpioSetAlertFunc(gpioAlertFunc_t fnc)
 	{
 #if defined(TRACE)
 		std::fprintf(stderr, "TRACE:\t%s\n", "gpioSetAlertFunc");
 #endif
-		return(::gpioSetAlertFunc(this->gpiopin,fnc));
+		this->RegisteredAlert = ::gpioSetAlertFunc(this->gpiopin,fnc);
+		return(this->RegisteredAlert);
 	}
 	int GPIO_PIN::gpioSetAlertFuncEx(gpioAlertFuncEx_t fnc, void *userdata)
 	{
 #if defined(TRACE)
 		std::fprintf(stderr, "TRACE:\t%s\n", "gpioSetAlertFuncEx");
 #endif
-		return(::gpioSetAlertFuncEx(this->gpiopin,fnc, (NULL==userdata ?this :userdata) ));
+		this->RegisteredAlert = ::gpioSetAlertFuncEx(this->gpiopin,fnc, (NULL==userdata ?this :userdata) );
+		return(this->RegisteredAlert);
 	}
 
-	int GPIO_PIN::gpioSetISRFunc(unsigned edge, int timeout, gpioISRFunc_t fnc) const
+	int GPIO_PIN::gpioSetISRFunc(unsigned edge, int timeout, gpioISRFunc_t fnc)
 	{
 #if defined(TRACE)
 		std::fprintf(stderr, "TRACE:\t%s\n", "gpioSetISRFunc");
 #endif
-		return(::gpioSetISRFunc(this->gpiopin,edge,timeout,fnc));
+		this->RegisteredISR = ::gpioSetISRFunc(this->gpiopin,edge,timeout,fnc);
+		return(this->RegisteredISR);
 	}
 	int GPIO_PIN::gpioSetISRFuncEx(unsigned edge, int timeout, gpioISRFuncEx_t fnc, void *userdata)
 	{
 #if defined(TRACE)
 		std::fprintf(stderr, "TRACE:\t%s\n", "gpioSetISRFuncEx");
 #endif
-		return(::gpioSetISRFuncEx(this->gpiopin,edge,timeout,fnc, (NULL==userdata ?this :userdata) ));
+		this->RegisteredISR = ::gpioSetISRFuncEx(this->gpiopin,edge,timeout,fnc, (NULL==userdata ?this :userdata) );
+		return(this->RegisteredISR);
 	}
 
 	bool GPIO_PIN::gpioGood(void) const

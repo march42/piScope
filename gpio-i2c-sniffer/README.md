@@ -20,6 +20,7 @@ das Protokoll aufzeichnet und die Logs auf Regelmässigkeiten analysieren.
 - [x] multiple interfaces and work loops
 - [x] logging functions
 - [x] parameter handling for logging
+- [ ] data buffering
 
 ## I2C Grundlagen und Informationen
 ### I2C protocol electrical specifications
