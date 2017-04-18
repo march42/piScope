@@ -1,4 +1,4 @@
-/*	GPIO and I2C implementations, with I2C protcol sniffer
+/*	GPIO and I2C implementations, with I2C protocol sniffer
 **
 **	(C) Copyright 2017 by Marc Hefter <marchefter@march42.net>
 **
@@ -34,7 +34,7 @@
 #	include <deque>
 #	include <pthread.h>
 
-/*	I2C protcol sniffer
+/*	I2C protocol sniffer
 **	main routine
 **		sniffer [SDA,SCL[,NAME]] ...
 */
@@ -159,7 +159,7 @@ public:	/* public members are accessible from anywhere */
 	**	0000 000	0	general call address
 	**	0000 000	1	START byte
 	**	0000 001	x	CBUS address
-	**	0000 010	x	reserved for differend bus format
+	**	0000 010	x	reserved for different bus format
 	**	0000 011	x	reserved for future purpose
 	**	0000 1xx	x	HS mode master code
 	**	1111 1xx	1	device ID
@@ -234,7 +234,7 @@ private:	/* private members are accessible only from within the same class or "f
 	uint32_t alert_tAverage_SCL;
 	uint32_t alert_frequency_SCL;
 	I2CDATA* alert_CurrentData;
-	std::deque<I2CDATA*> alert_CurrentQueue;	//	i2c incomming buffer queue
+	std::deque<I2CDATA*> alert_CurrentQueue;	//	i2c incoming buffer queue
 	std::deque<I2CDATA*> alert_DataQueue;	//	i2c data queue
 	friend void alert_GPIO (int alert, int level, uint32_t tick, void *userdata);
 protected:	/* protected members are accessible from the same class or "friends" and derived classes */
@@ -276,7 +276,7 @@ public:	/* public members are accessible from anywhere */
 	{
 #if defined(TRACE)
 		std::fprintf(stderr, "TRACE:\t%s\n", "I2CSNIFFER destructor");
-#endif		
+#endif
 		if(0 != this->pthread_sniffing)
 		{
 			this->pthread_stopp();
@@ -629,7 +629,7 @@ void alert_GPIO (int event, int level, uint32_t tick, void *userdata)
 	uint32_t alert_lastTick_SCL;
 	uint32_t alert_frequency_SCL;
 	I2CDATA* alert_CurrentData;
-	std::deque<I2CDATA*> alert_CurrentQueue;	//	i2c incomming buffer queue
+	std::deque<I2CDATA*> alert_CurrentQueue;	//	i2c incoming buffer queue
 	std::deque<I2CDATA*> alert_DataQueue;	//	i2c data queue
 	*/
 	//	push to queue

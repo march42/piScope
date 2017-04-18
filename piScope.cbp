@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="piScope" />
+		<Option platforms="" />
+		<Option makefile_is_custom="1" />
+		<Option pch_mode="2" />
+		<Option compiler="gnu_gcc_compiler_for_raspberry_pi" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/piScope" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gnu_gcc_compiler_for_raspberry_pi" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/piScope" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gnu_gcc_compiler_for_raspberry_pi" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename=".gitignore" />
+		<Unit filename="LICENSE" />
+		<Unit filename="Makefile" />
+		<Unit filename="README.md" />
+		<Unit filename="gpio-i2c-sniffer/Makefile" />
+		<Unit filename="gpio-i2c-sniffer/README.md" />
+		<Unit filename="gpio-i2c-sniffer/gpio-i2c.cpp" />
+		<Unit filename="gpio-i2c-sniffer/gpio-i2c.h" />
+		<Unit filename="source/I2Csensor.cpp" />
+		<Unit filename="source/I2Csensor.hpp" />
+		<Unit filename="source/IMU.cpp" />
+		<Unit filename="source/IMU.hpp" />
+		<Unit filename="source/Makefile" />
+		<Unit filename="source/i2c-dev.h" />
+		<Unit filename="source/test-i2c.cpp" />
+		<Unit filename="stellarium--telescope_server/Connection.cpp" />
+		<Unit filename="stellarium--telescope_server/Connection.hpp" />
+		<Unit filename="stellarium--telescope_server/Listener.cpp" />
+		<Unit filename="stellarium--telescope_server/Listener.hpp" />
+		<Unit filename="stellarium--telescope_server/LogFile.cpp" />
+		<Unit filename="stellarium--telescope_server/LogFile.hpp" />
+		<Unit filename="stellarium--telescope_server/Makefile" />
+		<Unit filename="stellarium--telescope_server/SerialPort.cpp" />
+		<Unit filename="stellarium--telescope_server/SerialPort.hpp" />
+		<Unit filename="stellarium--telescope_server/Server.cpp" />
+		<Unit filename="stellarium--telescope_server/Server.hpp" />
+		<Unit filename="stellarium--telescope_server/Socket.cpp" />
+		<Unit filename="stellarium--telescope_server/Socket.hpp" />
+		<Unit filename="stellarium--telescope_server/piScopeCommand.cpp" />
+		<Unit filename="stellarium--telescope_server/piScopeCommand.hpp" />
+		<Unit filename="stellarium--telescope_server/piScopeConnection.cpp" />
+		<Unit filename="stellarium--telescope_server/piScopeConnection.hpp" />
+		<Unit filename="stellarium--telescope_server/piScopeMain.cpp" />
+		<Unit filename="stellarium--telescope_server/piScopeServer.cpp" />
+		<Unit filename="stellarium--telescope_server/piScopeServer.hpp" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
