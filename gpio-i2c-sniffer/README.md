@@ -1,9 +1,13 @@
 # I2C sniffer
 
-Bei meiner Bresser EXOS-2 ist mir aufgefallen, dass die Motoren über i2c angesteuert werden und darüber auch
-die Bewegungen zurück melden. Mit etwas Aufwand dürfte es machbar sein, die Motorsteuerung und Positions-
+~~Bei meiner Montierung ist mir aufgefallen, dass die Motoren über i2c angesteuert werden und darüber auch
+die Bewegungen zurück melden.~~ Mit etwas Aufwand dürfte es machbar sein, die Motorsteuerung und Positions-
 bestimmung hierüber komplett nach zu bilden. Als erstes werde ich mir also mal einen I2C sniffer bauen, der
 das Protokoll aufzeichnet und die Logs auf Regelmässigkeiten analysieren.
+
+Auf den zweiten Blick hat es sich als RS232 herausgestellt, aber der Sniffer ist soweit fast einsatzbereit.
+Vielleicht schiebe ich den in ein anderes Projekt und mache ihn noch fertig.
+Nun muss ich nochmal ganz genau hinschauen, wie sich die Steuerung am besten realisieren lässt.
 
 ## Credits:
 - Das GPIO handling erledigt die PIGPIO library http://abyz.co.uk/rpi/pigpio/ damit ich hier nicht das Rad
@@ -12,15 +16,15 @@ das Protokoll aufzeichnet und die Logs auf Regelmässigkeiten analysieren.
 ## WIP/ToDo
 - [x] basic class layout
 - [x] simple wrappers for PIGPIO
-- [ ] GPIO reading
-- [ ] I2C bit and timing interpretation
+- [x] GPIO reading
+- [x] I2C bit and timing interpretation
 - [ ] I2C data and frequency interpretation
 - [x] pthread handling for work loop
 - [x] preparation for multiple interface handling
 - [x] multiple interfaces and work loops
 - [x] logging functions
 - [x] parameter handling for logging
-- [ ] data buffering
+- [x] data buffering
 
 ## I2C Grundlagen und Informationen
 ### I2C protocol electrical specifications

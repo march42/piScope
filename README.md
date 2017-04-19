@@ -16,7 +16,7 @@ und das Teleskop dann per ST-4 Port zu Steuern.
 
 Der Raspberry Pi als Plattform bot sich an, da ich davon den Einen oder Anderen im Arsenal habe. Auf einem
 meiner PIs steckt der PiHat (Astro Pi) der einen LSM9DS1 9DOF Sensor an Bord hat. Für den Anfang dürfte das
-also tun, für die Endversion würde ich dann eventuell eher den Bosch BSO055 wählen.
+also tun, für die Endversion würde ich dann eventuell eher den Bosch BNO055 wählen.
 
 ## Credits
 * Stellarium findet man unter http://stellarium.org/ den Source unter https://launchpad.net/stellarium
@@ -29,10 +29,4 @@ also tun, für die Endversion würde ich dann eventuell eher den Bosch BSO055 w�
 * Der 9DOF liefert immer etwas sinnfreie Werte, aber schon grob mit richtiger Richtung.
 * Eine Einnordung und Kalibrierung des 9DOF habe ich noch nicht geschafft.
 * Nachdem ich mich mit der Arithmethik und Sensorfusion beschäftigte graut es mir dolle
-
-Bei meiner Bresser EXOS-2 ist mir aufgefallen, dass die Motoren über i2c angesteuert werden und darüber auch
-die Bewegungen zurück melden. Mit etwas Aufwand dürfte es machbar sein, die Motorsteuerung und Positions-
-bestimmung hierüber komplett nach zu bilden. Als erstes werde ich mir also mal einen I2C sniffer bauen, der
-das Protokoll aufzeichnet und die Logs auf Regelmässigkeiten analysieren. Die Ansteuerung und Positionsberechnung
-liese sich am einfachsten mit einem Stellarium TelescopeServer realisieren, hierin das I2C Protokoll einzubauen
-wäre auch nicht besonders aufwendig.
+* Check out the Explore-Scientific PMC-Eight controller and mount
