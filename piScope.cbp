@@ -15,6 +15,7 @@
 				<Option compiler="gnu_gcc_compiler_for_raspberry_pi" />
 				<Compiler>
 					<Add option="-g" />
+					<Add option="-DDEBUG" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -24,6 +25,7 @@
 				<Option compiler="gnu_gcc_compiler_for_raspberry_pi" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add option="-DNDEBUG" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -41,9 +43,23 @@
 		<Unit filename="source/I2Csensor.hpp" />
 		<Unit filename="source/IMU.cpp" />
 		<Unit filename="source/IMU.hpp" />
+		<Unit filename="source/Location.cpp" />
+		<Unit filename="source/Location.hpp" />
+		<Unit filename="source/LogFile.cpp" />
+		<Unit filename="source/LogFile.hpp" />
+		<Unit filename="source/MACROS.h" />
 		<Unit filename="source/Makefile" />
+		<Unit filename="source/Orientation.cpp" />
+		<Unit filename="source/Orientation.hpp" />
+		<Unit filename="source/Telescope.cpp" />
+		<Unit filename="source/Telescope.hpp" />
+		<Unit filename="source/TimeStamp.cpp" />
+		<Unit filename="source/TimeStamp.hpp" />
+		<Unit filename="source/Vector4D.cpp" />
+		<Unit filename="source/Vector4D.hpp" />
 		<Unit filename="source/i2c-dev.h" />
 		<Unit filename="source/test-i2c.cpp" />
+		<Unit filename="source/test-vector.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />
