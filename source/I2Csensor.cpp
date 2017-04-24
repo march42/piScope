@@ -13,7 +13,7 @@
 #include <cstring>
 #include <unistd.h>
 
-#if defined(USE_OWN_I2CDEV)
+#if !defined(USE_LINUX_I2CDEV)
 #	include "i2c-dev.h"
 #else
 #	include <linux/i2c-dev.h>
@@ -30,7 +30,7 @@ namespace rpiScope
 
 	I2Cdevice::I2Cdevice(const int i2cdeviceaddress, const char* i2cbusdevice)
 	{
-#		ifdef DEBUG
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cdevice", "constructor begin", "");
 #		endif
@@ -46,7 +46,7 @@ namespace rpiScope
 		{
 			this->i2caddress = i2cdeviceaddress;
 		}
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cdevice", "constructor done", "");
 #		endif
@@ -54,12 +54,12 @@ namespace rpiScope
 
 	I2Cdevice::~I2Cdevice()
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cdevice", "destructor begin", "");
 #		endif
 		this->I2Cclose();
-#		ifdef DEBUG
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cdevice", "destructor done", "");
 #		endif
@@ -67,7 +67,7 @@ namespace rpiScope
 
 	I2Cdevice* I2Cdevice::I2Copen(const char* i2cbusdevice)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Copen", "begin", "");
 #		endif
@@ -87,7 +87,7 @@ namespace rpiScope
 			perror("I2C bus device open failed");
 			return(this);
 		}
-#		ifdef DEBUG
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Copen", "opened", this->devbus);
 #		endif
@@ -95,7 +95,7 @@ namespace rpiScope
 	}
 	I2Cdevice* I2Cdevice::I2Cclose(void)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cclose", "begin", "");
 #		endif
@@ -109,7 +109,7 @@ namespace rpiScope
 			{
 				this->fdbus = -1;
 			}
-#			ifdef DEBUG
+#		if defined(DEBUG4)
 			//	function, step, extra
 			printf("\t%s\t%s\t%s\n", "I2Cclose", "closed", this->devbus);
 #			endif
@@ -119,7 +119,7 @@ namespace rpiScope
 
 	I2Cdevice* I2Cdevice::I2Cselect(const int i2cdeviceaddress)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\tnow=0x%02X\tclass=0x%02X\n", "I2Cselect", i2cdeviceaddress, this->i2caddress);
 #		endif
@@ -156,7 +156,7 @@ namespace rpiScope
 		{
 			perror("I2C ioctl I2C_SLAVE failed");
 		}
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		else
 		{
 			//	function, step, extra
@@ -189,23 +189,13 @@ namespace rpiScope
 	I2Cdevice* I2Cdevice::I2Cwrite(char address, const unsigned char value)
 	{
 		//	write buffer to device
-#		if defined(USE_OWN_I2CDEV)
 		if(-1 == i2c_smbus_write_byte_data(this->fdbus, address, value))
 		{
 			char message[100];
 			sprintf(message, "i2c_smbus_write_byte_data failed [I2Cwrite %02X=%02X]", address, value);
 			perror(message);
 		}
-#		else
-		unsigned char buffer[2];
-		buffer[0] = address;
-		buffer[1] = value;
-		if ( 1 != write(this->fdbus, &buffer[0], 2) )
-		{
-			perror("I2C write (address,value) failed");
-		}
-#		endif
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cwrite", "", "");
 #		endif
@@ -219,7 +209,6 @@ namespace rpiScope
 		buffer[0] = address;
 		buffer[1] = *value;
 		//	write buffer to device
-#		if defined(USE_OWN_I2CDEV)
 		if(-1 == i2c_smbus_write_byte_data(this->fdbus, buffer[0], buffer[1]))
 		//if(1 != i2c_smbus_write_byte_data(this->fdbus, address, *value))
 		{
@@ -227,31 +216,7 @@ namespace rpiScope
 			sprintf(message, "i2c_smbus_write_byte_data failed [I2Cwrite %02X=%02X]", buffer[0], buffer[1]);
 			perror(message);
 		}
-#		elif defined(I2C_USE_READWRITE)
-		if ( 1 != write(this->fdbus, &buffer[0], 1) )
-		{
-			char message[100];
-			sprintf(message, "I2C write (address) failed [%02X]", buffer[0]);
-			perror(message);
-		}
-		else if ( 1 != write(this->fdbus, &buffer[1], 1) )
-		{
-			perror("I2C write (value) failed");
-		}
-#		else
-		struct i2c_rdwr_ioctl_data packets;
-		struct i2c_msg messages[1];
-		messages[0].addr  = this->i2caddress;
-		messages[0].flags = 0;
-		messages[0].len   = sizeof(buffer);
-		messages[0].buf   = (char*)buffer;
-		packets.msgs      = messages;
-		packets.nmsgs     = 1;
-		if(0 > ioctl(this->fdbus, I2C_RDWR, &packets)) {
-			perror("I2C ioctl I2C_RDWR (I2Cwrite) failed");
-		}
-#		endif
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cwrite", "", "");
 #		endif
@@ -261,7 +226,6 @@ namespace rpiScope
 
 	I2Cdevice* I2Cdevice::I2Cread(char address, unsigned char* value)
 	{
-#		if defined(USE_OWN_I2CDEV)
 		int buffer = i2c_smbus_read_byte_data(this->fdbus, address);
 		if(0 > buffer)
 		{
@@ -271,28 +235,7 @@ namespace rpiScope
 		{
 			*value = buffer &0xFF;
 		}
-#		else
-		//	prepare data buffer
-		unsigned char buffer[2];
-		buffer[0] = address;
-		buffer[1] = *value;
-		//	write register address to device
-		if ( 1 != write(this->fdbus, &buffer[0], 1) )
-		{
-			perror("I2C write (select register) failed");
-		}
-		//	read buffer from device
-		else if ( 1 != read(this->fdbus, &buffer[1], 1) )
-		{
-			perror("I2C read failed");
-		}
-		//	copy value to buffer
-		else
-		{
-			*value = buffer[1];
-		}
-#		endif
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cread", "byte", "");
 #		endif
@@ -300,7 +243,6 @@ namespace rpiScope
 	}
 	I2Cdevice* I2Cdevice::I2Cread(char address, unsigned char* value, int length)
 	{
-#		if defined(USE_OWN_I2CDEV)
 		//i2c_smbus_read_byte_data
 		unsigned char* pos = value;
 		int togo = length;
@@ -316,36 +258,7 @@ namespace rpiScope
 			pos += rbytes;
 			togo -= rbytes;
 		}
-#		elif defined(I2C_USE_READWRITE)
-		//	write register address to device
-		if ( 1 != write(this->fdbus, &address, 1) )
-		{
-			perror("I2C write (select register) failed");
-		}
-		//	read buffer from device
-		else if ( length != read(this->fdbus, value, length) )
-		{
-			perror("I2C read failed");
-		}
-#		else
-		unsigned char reg = address &0xFF;
-		struct i2c_rdwr_ioctl_data packets;
-		struct i2c_msg messages[2];
-		messages[0].addr  = this->i2caddress;
-		messages[0].flags = 0;
-		messages[0].len   = sizeof(reg);
-		messages[0].buf   = &reg;
-		messages[1].addr  = this->i2caddress;
-		messages[1].flags = I2C_M_RD/* | I2C_M_NOSTART*/;
-		messages[1].len   = length;
-		messages[1].buf   = value;
-		packets.msgs      = messages;
-		packets.nmsgs     = 2;
-		if(0 > ioctl(this->fdbus, I2C_RDWR, &packets)) {
-			perror("I2C ioctl I2C_RDWR (I2Cread) failed");
-		}
-#		endif
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cread", "block", "");
 #		endif
@@ -355,7 +268,7 @@ namespace rpiScope
 
 	bool I2Cdevice::I2Cready(void)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cready", "", "");
 #		endif
@@ -364,7 +277,7 @@ namespace rpiScope
 
 	I2Csensor::I2Csensor(I2Csensortype i2csensor, const int i2cdeviceaddress, const char* i2cbusdevice) : I2Cdevice(i2cdeviceaddress, i2cbusdevice)
 	{
-#		ifdef DEBUG
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Csensor", "constructor begin", "");
 #		endif
@@ -400,14 +313,14 @@ namespace rpiScope
 				this->I2Cclose();
 			}
 		}
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Csensor", "constructor", "");
 #		endif
 	}
 	I2Csensor::~I2Csensor()
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Csensor", "destructor", "");
 #		endif
@@ -477,7 +390,7 @@ namespace rpiScope
 		{
 			perror("I2Cread2buffer needs a known sensor type");
 		}
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cread2buffer", "done", "");
 #		endif
@@ -517,7 +430,7 @@ namespace rpiScope
 		{
 			this->I2Cread2buffer();
 		}
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Creadimu", "done", "");
 #		endif
@@ -606,7 +519,7 @@ namespace rpiScope
 		{
 			perror("I2Cinitialize needs a known sensor type");
 		}
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cread2buffer", "done", "");
 #		endif
@@ -614,7 +527,7 @@ namespace rpiScope
 
 	bool I2Csensor::Identify_LSM9DS1(void)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "Identify_LSM9DS1", "begin", "");
 #		endif
@@ -652,7 +565,7 @@ namespace rpiScope
 			this->i2caddress_mag = 0;
 			perror("LSM9DS1 (mag) not identified");
 		}
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "Identify_LSM9DS1", "done", "");
 #		endif
@@ -661,7 +574,7 @@ namespace rpiScope
 
 	bool I2Csensor::Identify_BNO055(void)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "Identify_BNO055", "begin", "");
 #		endif
@@ -689,7 +602,7 @@ namespace rpiScope
 			this->i2caddress_gyro = this->i2caddress_acc = this->i2caddress_mag = 0;
 			perror("BNO055 not identified");
 		}
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "Identify_BNO055", "done", "");
 #		endif
@@ -809,7 +722,7 @@ namespace rpiScope
 
 	void I2Csensor::pthread_I2Creading(void)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "pthread_I2Creading", "starting", "");
 #		endif
@@ -831,7 +744,7 @@ namespace rpiScope
 	}
 	void I2Csensor::pthread_stopp(void)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "pthread_stopp", "starting", "");
 #		endif
@@ -845,7 +758,7 @@ namespace rpiScope
 
 	void *pthread_DataReading(void *data)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "pthread_DataReading", "starting", "");
 #		endif
@@ -866,7 +779,7 @@ namespace rpiScope
 			if(0 == (read_counter++ &0x3F))
 			{
 				mother->I2Cread2buffer();
-#				if defined(DEBUG3)
+#				if defined(DEBUG5)
 				mother->DebugDataBuffer();
 #				endif
 			}
@@ -876,7 +789,7 @@ namespace rpiScope
 			}
 			usleep(1000000 >>5);	//	32Hz reading
 		}
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "pthread_DataReading", "stopping", "");
 #		endif

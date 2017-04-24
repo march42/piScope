@@ -77,7 +77,7 @@ namespace rpiScope
 		this->FullScale = value->FullScale;
 		this->Length = value->Length;
 	};
-	IMU_Vector::IMU_Vector(float valX, float valY, float valZ, float valScale)
+	IMU_Vector::IMU_Vector(double valX, double valY, double valZ, double valScale)
 	{
 		this->X = valX;
 		this->Y = valY;
@@ -85,7 +85,7 @@ namespace rpiScope
 		this->FullScale = (0.0 == valScale) ?1.0 :valScale;
 		this->Length = 1.0;
 	};
-	IMU_Vector::IMU_Vector(int16_t valX, int16_t valY, int16_t valZ, float valScale)
+	IMU_Vector::IMU_Vector(int16_t valX, int16_t valY, int16_t valZ, double valScale)
 	{
 		this->X = valX *1.0;
 		this->Y = valY *1.0;
@@ -93,7 +93,7 @@ namespace rpiScope
 		this->FullScale = (0.0 == valScale) ?1.0 :valScale;
 		this->Length = 1.0;
 	};
-	IMU_Vector::IMU_Vector(int32_t valX, int32_t valY, int32_t valZ, float valScale)
+	IMU_Vector::IMU_Vector(int32_t valX, int32_t valY, int32_t valZ, double valScale)
 	{
 		this->X = valX *1.0;
 		this->Y = valY *1.0;
@@ -101,7 +101,7 @@ namespace rpiScope
 		this->FullScale = (0.0 == valScale) ?1.0 :valScale;
 		this->Length = 1.0;
 	};
-	IMU_Vector& IMU_Vector::set(float valX, float valY, float valZ, float valScale)
+	IMU_Vector& IMU_Vector::set(double valX, double valY, double valZ, double valScale)
 	{
 		this->X = valX;
 		this->Y = valY;
@@ -113,7 +113,7 @@ namespace rpiScope
 		this->Length = 1.0;
 		return(*this);
 	};
-	IMU_Vector& IMU_Vector::set(int16_t valX, int16_t valY, int16_t valZ, float valScale)
+	IMU_Vector& IMU_Vector::set(int16_t valX, int16_t valY, int16_t valZ, double valScale)
 	{
 		this->X = valX *1.0;
 		this->Y = valY *1.0;
@@ -125,7 +125,7 @@ namespace rpiScope
 		this->Length = 1.0;
 		return(*this);
 	};
-	IMU_Vector& IMU_Vector::set(int32_t valX, int32_t valY, int32_t valZ, float valScale)
+	IMU_Vector& IMU_Vector::set(int32_t valX, int32_t valY, int32_t valZ, double valScale)
 	{
 		this->X = valX *1.0;
 		this->Y = valY *1.0;
@@ -137,22 +137,22 @@ namespace rpiScope
 		this->Length = 1.0;
 		return(*this);
 	};
-	float IMU_Vector::scaledX(void)
+	double IMU_Vector::scaledX(void)
 	{
 		return(this->X * this->FullScale);
 	}
-	float IMU_Vector::scaledY(void)
+	double IMU_Vector::scaledY(void)
 	{
 		return(this->Y * this->FullScale);
 	}
-	float IMU_Vector::scaledZ(void)
+	double IMU_Vector::scaledZ(void)
 	{
 		return(this->Z * this->FullScale);
 	}
 	IMU_Vector& IMU_Vector::Normalize(void)
 	{
 		this->Length = sqrt( (this->X*this->X) + (this->Y*this->Y) + (this->Z*this->Z) );
-#		ifdef DEBUG3
+#		if !defined(NDEBUG)
 		printf("\t%s\t%f,%f,%f\t%f\n", "IMU_Vector::Normalize", this->X, this->Y, this->Z, this->Length);
 #		endif
 		if(0 != this->Length)
@@ -169,9 +169,9 @@ namespace rpiScope
 		//	normalize vector
 		value->Normalize();
 		//	compute Euler angle
-		float EulerX = atan2( value->Y, value->Z );
-		float EulerY = -atan2( value->X, sqrt( (value->Y*value->Y) + (value->Z*value->Z) ) );
-#		ifdef DEBUG2
+		double EulerX = atan2( value->Y, value->Z );
+		double EulerY = -atan2( value->X, sqrt( (value->Y*value->Y) + (value->Z*value->Z) ) );
+#		if !defined(NDEBUG)
 		printf("\t%s\t%f,%f\t%f,%f\n", "IMU_Vector::ToEuler", EulerX, EulerY, value->Length, value->FullScale);
 #		endif
 		//	set vector to temporary values
@@ -191,11 +191,11 @@ namespace rpiScope
 	}
 	IMU_Data::~IMU_Data()
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		printf("\t%s\t%s\t%s\n", "IMU_Data", "destructor", "begin");
 #		endif
 		this->DestroyMutex();
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		printf("\t%s\t%s\t%s\n", "IMU_Data", "destructor", "done");
 #		endif
 	}
@@ -221,7 +221,7 @@ namespace rpiScope
 	}
 	void IMU_Data::DestroyMutex(void)
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		printf("\t%s\t%s\t%s\n", "IMU_Data", "DestroyMutex", "");
 #		endif
 		//	destroy mutex
@@ -231,9 +231,9 @@ namespace rpiScope
 	IMU_Vector*	IMU_Data::vector(void)
 	{
 		//	calculate average
-		float X = 0;
-		float Y = 0;
-		float Z = 0;
+		double X = 0;
+		double Y = 0;
+		double Z = 0;
 		pthread_mutex_lock(&this->pthread_mutex);
 		size_t count = this->LPF_Values.size();
 		if(0 < count)
@@ -256,7 +256,7 @@ namespace rpiScope
 	{
 		return(this->LPF_Values.empty() ?0 :this->LPF_Values.back().X);
 	}
-	float IMU_Data::scaledX(void)
+	double IMU_Data::scaledX(void)
 	{
 		return(this->LPF_Values.empty() ?0.0 :(this->LPF_Values.back().X * this->FullScale));
 	}
@@ -264,7 +264,7 @@ namespace rpiScope
 	{
 		return(this->LPF_Values.empty() ?0 :this->LPF_Values.back().Y);
 	}
-	float IMU_Data::scaledY(void)
+	double IMU_Data::scaledY(void)
 	{
 		return(this->LPF_Values.empty() ?0.0 :(this->LPF_Values.back().Y * this->FullScale));
 	}
@@ -272,7 +272,7 @@ namespace rpiScope
 	{
 		return(this->LPF_Values.empty() ?0 :this->LPF_Values.back().Z);
 	}
-	float IMU_Data::scaledZ(void)
+	double IMU_Data::scaledZ(void)
 	{
 		return(this->LPF_Values.empty() ?0.0 :(this->LPF_Values.back().Z * this->FullScale));
 	}
@@ -294,7 +294,7 @@ namespace rpiScope
 	}
 	IMU_MARGdata::~IMU_MARGdata()
 	{
-#		ifdef DEBUG2
+#		if defined(DEBUG4)
 		printf("\t%s\t%s\t%s\n", "IMU_MARGdata", "destructor", "");
 #		endif
 	}
@@ -343,7 +343,7 @@ namespace rpiScope
 	{
 		this->DataGyroscope.Push(X,Y,Z);
 	}
-	void IMU_MARGdata::SetFullScale(float gyro, float acc, float mag)
+	void IMU_MARGdata::SetFullScale(double gyro, double acc, double mag)
 	{
 		this->DataGyroscope.FullScale = gyro;
 		this->DataAcceleration.FullScale = acc;
@@ -358,12 +358,12 @@ namespace rpiScope
 		IMU_Vector* acc = this->Acceleration();
 		acc->Normalize();
 		//	calculate
-		float gyroFactor = 1.0/32;
-		float valX = (acc->X *(1.0-gyroFactor)) + (gyro->X *gyroFactor);
-		float valY = (acc->Y *(1.0-gyroFactor)) + (gyro->Y *gyroFactor);
-		float valZ = (acc->Z *(1.0-gyroFactor)) + (gyro->Z *gyroFactor);
-		float EulerX = atan2( valY, valZ );
-		float EulerY = -atan2( valX, sqrt( (valY*valY) + (valZ*valZ) ) );
+		double gyroFactor = 0.95L;
+		double valX = (acc->X *(1.0-gyroFactor)) + (gyro->X *gyroFactor);
+		double valY = (acc->Y *(1.0-gyroFactor)) + (gyro->Y *gyroFactor);
+		double valZ = (acc->Z *(1.0-gyroFactor)) + (gyro->Z *gyroFactor);
+		double EulerX = atan2( valY, valZ );
+		double EulerY = -atan2( valX, sqrt( (valY*valY) + (valZ*valZ) ) );
 		IMU_Vector* value = new IMU_Vector(EulerX,EulerY,0.0, (180/M_PI) );
 		//	free buffers
 		delete(gyro);
