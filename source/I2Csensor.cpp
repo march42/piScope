@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <cmath>
 #include <climits>
+#include <cassert>
 
 using namespace std;
 namespace rpiScope
@@ -186,10 +187,10 @@ namespace rpiScope
 		return(this);
 	}
 
-	I2Cdevice* I2Cdevice::I2Cwrite(char address, const unsigned char value)
+	I2Cdevice* I2Cdevice::I2Cwrite(char address, const int value)
 	{
 		//	write buffer to device
-		if(-1 == i2c_smbus_write_byte_data(this->fdbus, address, value))
+		if(-1 == i2c_smbus_write_byte_data(this->fdbus, address, (unsigned char)value))
 		{
 			char message[100];
 			sprintf(message, "i2c_smbus_write_byte_data failed [I2Cwrite %02X=%02X]", address, value);
@@ -324,6 +325,21 @@ namespace rpiScope
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Csensor", "destructor", "");
 #		endif
+		//	deinit
+		if(I2C_LSM9DS1 == this->sensortype)
+		{
+			//	gyroscope, accelerometer
+			this->I2Cselect(this->i2caddress_acc);
+			this->I2Cwrite(0x22, 0b10000000);	//	REBOOT memory content
+			usleep(1000);
+			this->I2Cwrite(0x10, 0b00000000);	//	POWER DOWN gyro
+			this->I2Cwrite(0x20, 0b00000000);	//	POWER DOWN acc
+			//	magnetometer
+			this->I2Cselect(this->i2caddress_mag);
+			this->I2Cwrite(0x21, 0b00001000);	//	REBOOT memory content
+			usleep(1000);
+			this->I2Cwrite(0x22, 0b00000011);	//	POWER DOWN mag
+		}
 		//	stop and clean threads
 		this->pthread_stopp();
 	}
@@ -449,67 +465,56 @@ namespace rpiScope
 			unsigned char valNew = 0;
 			//	configure acc,gyro
 			this->I2Cselect(this->i2caddress_acc);
-			valNew = 0b01000000;	//	gyro 59.5Hz
-			this->I2Cread(0x10, &valNow);	valNew |= (valNow &0b00011011);
+			this->I2Cwrite(0x22, 0b10000000);	//	REBOOT memory content
+			sleep(1);
+			this->I2Cread(0x22, &valNow);
+			assert(0 == (valNow &0x80));	//	REBOOT bit cleared
+			valNew = 0b00100000;	//	gyro 14.9Hz, full scale 245dps
+			//this->I2Cread(0x10, &valNow); valNew |= (valNow &0b00011011);
 			this->I2Cwrite(0x10, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x11, &valNow);	valNew |= (valNow &0b00001111);
+			valNew = 0b00000000;	//	no interrupt, default output selection
 			this->I2Cwrite(0x11, valNew);
-			valNew = 0b01000101;
-			this->I2Cread(0x12, &valNow);	valNew |= (valNow &0b10000000);
+			valNew = 0b01000011;	//	gyro HPF enabled, cutoff 0.1Hz
 			this->I2Cwrite(0x12, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x13, &valNow);	valNew |= (valNow &0b00111111);
+			valNew = 0b00000000;	//	gyro X,Y,Z sign positive, directional user orientation =000
 			this->I2Cwrite(0x13, valNew);
-			valNew = 0b00111000;
-			this->I2Cread(0x1E, &valNow);	valNew |= (valNow &0b00000011);
+			valNew = 0b00111000;	//	gyro X,Y,Z enabled
 			this->I2Cwrite(0x1E, valNew);
-			valNew = 0b11111000;
-			this->I2Cread(0x1F, &valNow);	valNew |= (valNow &0b00000000);
+			valNew = 0b10111000;	//	acc update every 4th sample, X,Y,Z enabled
 			this->I2Cwrite(0x1F, valNew);
-			valNew = 0b00100000;	//	acc 10Hz
-			this->I2Cread(0x20, &valNow);	valNew |= (valNow &0b00011111);
+			valNew = 0b01011000;	//	acc 50Hz, full scale 8G
 			this->I2Cwrite(0x20, valNew);
-			valNew = 0b10000000;	//	HR acc disabled
-			this->I2Cread(0x21, &valNow);	valNew |= (valNow &0b01100101);
+			valNew = 0b01100000;	//	HR acc disabled, ODR/400Hz cutoff
 			this->I2Cwrite(0x21, valNew);
-			valNew = 0b00000110;
-			this->I2Cread(0x22, &valNow);	valNew |= (valNow &0b00111000);
+			valNew = 0b00000100;	//	BDU disabled, auto increment register address, LITTLE ENDIAN
 			this->I2Cwrite(0x22, valNew);
 			valNew = 0b00000000;
-			this->I2Cread(0x23, &valNow);	valNew |= (valNow &0b01011011);
 			this->I2Cwrite(0x23, valNew);
-			valNew = 0b00000101;
-			this->I2Cread(0x24, &valNow);	valNew |= (valNow &0b00000101);
+			valNew = 0b00000000;	//	gyro and acc self test disabled
 			this->I2Cwrite(0x24, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x26, &valNow);	valNew |= (valNow &0b01111111);
+			valNew = 0b00000000;	//	clear interrupt flags
 			this->I2Cwrite(0x26, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x2E, &valNow);	valNew |= (valNow &0b11111111);
+			valNew = 0b00000000;	//	FIFO disabled
 			this->I2Cwrite(0x2E, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x30, &valNow);	valNew |= (valNow &0b11111111);
+			valNew = 0b00000000;	//	disable interrupts
 			this->I2Cwrite(0x30, valNew);
 			//	configure compass
 			this->I2Cselect(this->i2caddress_mag);
-			valNew = 0b10001001;
-			this->I2Cread(0x20, &valNow);	valNew |= (valNow &0b00000000);
+			this->I2Cwrite(0x21, 0b00001000);	//	REBOOT memory content
+			sleep(1);
+			this->I2Cread(0x21, &valNow);
+			assert(0 == (valNow &0x08));	//	REBOOT bit cleared
+			valNew = 0b11010000;	//	temperature compensate, high performance X,Y, 10Hz, self test disabled
 			this->I2Cwrite(0x20, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x21, &valNow);	valNew |= (valNow &0b00001100);
+			valNew = 0b00000000;	//	full scale 4gauss
 			this->I2Cwrite(0x21, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x22, &valNow);	valNew |= (valNow &0b00100100);
+			valNew = 0b00000000;	//	disable low power, select continuous conversion
 			this->I2Cwrite(0x22, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x23, &valNow);	valNew |= (valNow &0b00001100);
+			valNew = 0b00001000;	//	high performance Z, LITTLE ENDIAN
 			this->I2Cwrite(0x23, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x24, &valNow);	valNew |= (valNow &0b01000000);
+			valNew = 0b00000000;	//	disable fast read, disable BDU
 			this->I2Cwrite(0x24, valNew);
-			valNew = 0b00000000;
-			this->I2Cread(0x30, &valNow);	valNew |= (valNow &0b11100111);
+			valNew = 0b00000000;	//	disable interrupts
 			this->I2Cwrite(0x30, valNew);
 		}
 		else if(I2C_BNO055 == this->sensortype)

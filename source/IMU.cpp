@@ -151,10 +151,7 @@ namespace rpiScope
 	}
 	IMU_Vector& IMU_Vector::Normalize(void)
 	{
-		this->Length = sqrt( (this->X*this->X) + (this->Y*this->Y) + (this->Z*this->Z) );
-#		if !defined(NDEBUG)
-		printf("\t%s\t%f,%f,%f\t%f\n", "IMU_Vector::Normalize", this->X, this->Y, this->Z, this->Length);
-#		endif
+		this->Length = std::sqrt( std::pow(this->X,2) + std::pow(this->Y,2) + std::pow(this->Z,2) );
 		if(0 != this->Length)
 		{
 			this->X /= this->Length;
@@ -169,8 +166,8 @@ namespace rpiScope
 		//	normalize vector
 		value->Normalize();
 		//	compute Euler angle
-		double EulerX = atan2( value->Y, value->Z );
-		double EulerY = -atan2( value->X, sqrt( (value->Y*value->Y) + (value->Z*value->Z) ) );
+		double EulerX = std::atan2( value->Y, value->Z );
+		double EulerY = -std::atan2( value->X, std::sqrt( std::pow(value->Y,2) + std::pow(value->Z,2) ) );
 #		if !defined(NDEBUG)
 		printf("\t%s\t%f,%f\t%f,%f\n", "IMU_Vector::ToEuler", EulerX, EulerY, value->Length, value->FullScale);
 #		endif
@@ -369,6 +366,31 @@ namespace rpiScope
 		delete(gyro);
 		delete(acc);
 		//	return
+		return(value);
+	}
+
+	IMU_Vector* IMU_MARGdata::Fusion3D(void)
+	{
+		//	get sensor data an d normalize
+		IMU_Vector* acc = this->Acceleration();
+		acc->Normalize();
+		IMU_Vector* gyro = this->Gyroscope();
+		gyro->Normalize();
+		IMU_Vector* mag = this->Magnetometer();
+		mag->Normalize();
+		//	Pitch&Roll Euler angle
+		double gyroFactor = 0.95L;
+		double valX = (acc->X *(1.0-gyroFactor)) + (gyro->X *gyroFactor);
+		double valY = (acc->Y *(1.0-gyroFactor)) + (gyro->Y *gyroFactor);
+		double valZ = (acc->Z *(1.0-gyroFactor)) + (gyro->Z *gyroFactor);
+		double EulerPitch = std::atan2( valY, valZ );
+		double EulerRoll = -std::atan2( valX, std::sqrt(std::pow(valY,2) + std::pow(valZ,2)) );
+		//	Tilt compensation of Magnetometer
+		double radXH = (mag->X * std::cos(EulerPitch)) + (mag->Y * std::sin(EulerPitch) * std::sin(EulerRoll)) + (mag->Z * std::sin(EulerPitch) * std::cos(EulerRoll));
+		double radYH = (mag->Y * std::cos(EulerRoll)) + (mag->Z * std::sin(EulerRoll));
+		double MagYaw = std::atan2(-radYH, radXH);
+		//	done
+		IMU_Vector* value = new IMU_Vector(EulerPitch,EulerRoll, MagYaw, (180/M_PI));
 		return(value);
 	}
 

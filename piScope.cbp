@@ -62,7 +62,7 @@
 		<Unit filename="source/Vector3D.cpp" />
 		<Unit filename="source/Vector3D.hpp" />
 		<Unit filename="source/i2c-dev.h" />
-		<Unit filename="source/test-i2c.cpp" />
+		<Unit filename="source/test-i2csensor.cpp" />
 		<Unit filename="source/test-vector.cpp" />
 		<Extensions>
 			<code_completion />

@@ -80,6 +80,7 @@ int main(int argc, char* argv[], char* envp[])
 		rpiScope::IMU_Vector*	Gyroscope = imu.IMUvalue.Gyroscope();
 		rpiScope::IMU_Vector*	Magnetometer = imu.IMUvalue.Magnetometer();
 		rpiScope::IMU_Vector*	euler = imu.IMUvalue.Orientation();
+		rpiScope::IMU_Vector*	fusion = imu.IMUvalue.Fusion3D();
 #		if defined(DEBUG3)
 		std::cout << "\t" << "a=" << Acceleration->X << "," << Acceleration->Y << "," << Acceleration->Z
 			<< "\t" << "a=" << Acceleration->scaledX() << "," << Acceleration->scaledY() << "," << Acceleration->scaledZ()
@@ -90,7 +91,7 @@ int main(int argc, char* argv[], char* envp[])
 		std::cout << "\t" << "m=" << Magnetometer->X << "," << Magnetometer->Y << "," << Magnetometer->Z
 			<< "\t" << "m=" << Magnetometer->scaledX() << "," << Magnetometer->scaledY() << "," << Magnetometer->scaledZ()
 			<< std::endl;
-#		elif defined(DEBUG)
+#		elif defined(DEBUG2)
 		std::cout
 			<< "\t" << "a=" << Acceleration->scaledX() << "," << Acceleration->scaledY() << "," << Acceleration->scaledZ()
 			<< "\t" << "g=" << Gyroscope->scaledX() << "," << Gyroscope->scaledY() << "," << Gyroscope->scaledZ()
@@ -98,13 +99,15 @@ int main(int argc, char* argv[], char* envp[])
 			<< std::endl;
 #		endif
 		std::cout
-			<< "\t" << "O=" << euler->scaledX() << "," << euler->scaledY() << "," << euler->scaledZ()
+			<< "\t" << "E=" << euler->scaledX() << "," << euler->scaledY() << "," << euler->scaledZ()
+			<< "\t" << "F=" << fusion->scaledX() << "," << fusion->scaledY() << "," << fusion->scaledZ()
 			<< std::endl;
 		//	free vector data
 		delete(Acceleration);
 		delete(Gyroscope);
 		delete(Magnetometer);
 		delete(euler);
+		delete(fusion);
 		sleep(1);
 	}
 

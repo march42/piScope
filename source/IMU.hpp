@@ -78,6 +78,7 @@ namespace rpiScope
 			void SetFullScale(double gyro, double acc, double mag);
 			//	get calculated values
 			IMU_Vector* Orientation(void);
+			IMU_Vector* Fusion3D(void);
 		protected:
 			IMU_Data DataMagnetometer;
 			IMU_Data DataAcceleration;

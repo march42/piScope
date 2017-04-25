@@ -29,7 +29,7 @@ namespace rpiScope
 			I2Cdevice* I2Copen(const char* i2cbusdevice="/dev/i2c-1");
 			I2Cdevice* I2Cclose(void);
 			I2Cdevice* I2Cselect(const int i2cdeviceaddress=-1);
-			I2Cdevice* I2Cwrite(char address, const unsigned char value);
+			I2Cdevice* I2Cwrite(char address, const int value);
 			I2Cdevice* I2Cwrite(char address, const unsigned char* value);
 			I2Cdevice* I2Cread(char address, unsigned char* value);
 			I2Cdevice* I2Cread(char address, unsigned char* value, int length);

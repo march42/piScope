@@ -25,10 +25,8 @@
 #	define _TELESCOPE_HPP_
 
 #	include "LogFile.hpp"
-#	include "Location.hpp"
-#	include "Orientation.hpp"
 #	include "AstroTime.hpp"
-#	include "Vector4D.hpp"
+#	include "AstroVector.hpp"
 
 #	include <unistd.h>
 
