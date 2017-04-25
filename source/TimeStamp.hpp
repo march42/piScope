@@ -34,22 +34,20 @@ namespace piScope
 	private:	/* private members are accessible only from within the same class or "friends" */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
-		time_t UTC_ts;
-		float longitude;
+		time_t UTC;
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		TimeStamp(time_t ts =1, float lon =0.0);
+		TimeStamp(time_t ts =1);	//	==1 flag, to get current time
 		~TimeStamp();
 
 		//	public access methods
 		time_t Set(time_t ts =1);
-		float SetLongitude(float lon =0.0);
 
 		//	public access methods
-		time_t Get(int type =-1) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST)
-		double GetJulianDate(int modified =0) const;	//	get Julian Date on prime meridian (0=JD, 1=MJD)
-		const char* ToString(int type =-1) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST)
+		time_t Get(void) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST, 2=JD, 3=MJD)
+		double GetJulianDate(int modified =false) const;	//	get Julian Date on prime meridian (0=JD, 1=MJD)
+		const char* ToString(void) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST, 2=JD, 3=MJD)
 	};
 
 };

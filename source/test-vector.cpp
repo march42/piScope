@@ -2,9 +2,7 @@
 **
 */
 
-#include "Location.hpp"
-#include "Vector4D.hpp"
-#include "TimeStamp.hpp"
+#include "AstroVector.hpp"
 
 #include <unistd.h>
 #include <cstdio>
@@ -23,7 +21,7 @@ int main(int argc, char* argv[], char* envp[])
 	//	test Location (49.964608N 9.146783E)
 	double lat = 49.964608;
 	double lon = 9.146783;
-	int height = 160;
+	double height = 160;
 	Location here(lat,lon,height,"Aschaffenburg");
 	std::fprintf(stdout, "\tLocation:\t%s\n", here.ToString());
 	std::fprintf(stdout, "\tLocation:\t%s\n", (new Location(-23.9999999999,-89.123456789,987.654321))->ToString());
@@ -33,12 +31,13 @@ int main(int argc, char* argv[], char* envp[])
 	std::fprintf(stdout, "\tLocation:\t%s\n", (new Location(79.9999999,90.23456789,987.654321))->ToString());
 
 	//	test time stamp
-	TimeStamp now(1,lon);
+	AstroTime now(1,&here);
 	std::fprintf(stdout, "\tTimeStamp:\t%s\n", now.ToString());
 	std::fprintf(stdout, "\tTimeStamp:\t%s\n", now.ToString(-1));
 	std::fprintf(stdout, "\tTimeStamp:\t%s\n", now.ToString(1));
 	std::fprintf(stdout, "\tTimeStamp:\t%s\n", now.ToString(0));
 	std::fprintf(stdout, "\tJulianDate:\t%f\n", now.GetJulianDate());
+	std::fprintf(stdout, "\tModified JulianDate:\t%f\n", now.GetJulianDate(true));
 
 	//	test 3D vector
 	Vector3D aburg = *here.ToVector();

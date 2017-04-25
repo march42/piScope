@@ -1,7 +1,8 @@
 # Makefile
 
-LIBRARIES_CPP = I2Csensor.cpp IMU.cpp
-LIBRARIES_CPP += TimeStamp.cpp LogFile.cpp Location.cpp Vector4D.cpp Orientation.cpp Telescope.cpp
+LIBRARIES_CPP += Vector3D.cpp Location.cpp TimeStamp.cpp AstroTime.cpp AstroVector.cpp
+LIBRARIES_CPP += LogFile.cpp Telescope.cpp
+LIBRARIES_CPP += I2Csensor.cpp IMU.cpp
 LIBRARIES_O = $(LIBRARIES_CPP:.cpp=.o)
 LIBRARIES_OBJ = $(LIBRARIES_CPP:.cpp=.obj)
 

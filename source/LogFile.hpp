@@ -24,6 +24,7 @@
 #ifndef _LOGFILE_HPP_
 #	define _LOGFILE_HPP_
 
+#	include <unistd.h>
 #	include <cstdio>
 
 namespace piScope

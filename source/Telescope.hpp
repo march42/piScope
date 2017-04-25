@@ -25,6 +25,12 @@
 #	define _TELESCOPE_HPP_
 
 #	include "LogFile.hpp"
+#	include "Location.hpp"
+#	include "Orientation.hpp"
+#	include "AstroTime.hpp"
+#	include "Vector4D.hpp"
+
+#	include <unistd.h>
 
 namespace piScope
 {

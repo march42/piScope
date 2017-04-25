@@ -28,66 +28,84 @@
 //#include <cstdlib>
 #include <cstring>
 //#include <cmath>
-//#include <climits>
+#include <cassert>
 
 namespace piScope
 {
 
-	Location::Location(double lat, double lon, int height, const char* name)
-		: latitude(lat), longitude(lon), height(height)
+	Location::Location(double lat, double lon, double height, const char* name)
+		: Vector3D(VectorType_LATLON, lat, lon, height, 1.0), Name(NULL)
 	{
-		this->name = NULL;
-		if(NULL != name)
-		{
-			this->name = new char[std::strlen(name) +1];
-			std::strcpy(this->name, name);
-		}
-		this->Validate();
-	}
-	Location::Location(float lat, float lon, float height)
-		: latitude(lat), longitude(lon), height(height)
-	{
-		this->name = NULL;
+		this->SetName(name);	//	set name, if given
 		this->Validate();
 	}
 	Location::~Location()
 	{
+		this->SetName(NULL);	//	free name buffer
 	}
 
 	Location* Location::Validate(Location* loc)
 	{
 		Location* source = (NULL==loc ?this :loc);
-		while(90.0 < source->latitude || -90.0 > source->latitude)
+		while(90.0 < source->X || -90.0 > source->X)
 		{
 			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\t%s=%f\n", "latitude", source->latitude);
+				std::fprintf(stderr, "debug:\t%s=%f\n", "latitude", source->X);
 			#endif
-			if(90.0 < source->latitude)
+			if(90.0 < source->X)
 			{
-				source->latitude -= 180;
+				source->X -= 180;
 			}
-			else if(-90.0 > source->latitude)
+			else if(-90.0 > source->X)
 			{
-				source->latitude += 180;
+				source->X += 180;
 			}
-			source->latitude *= -1;
-			source->longitude *= -1;
+			source->X *= -1;
+			source->Y *= -1;
 		}
-		while(-180.0 > source->longitude)
+		while(-180.0 > source->Y)
 		{
 			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\t%s=%f\n", "longitude", source->longitude);
+				std::fprintf(stderr, "debug:\t%s=%f\n", "longitude", source->Y);
 			#endif
-			source->longitude += 360;
+			source->Y += 360;
 		}
-		while(180.0 < source->longitude)
+		while(180.0 < source->Y)
 		{
 			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\t%s=%f\n", "longitude", source->longitude);
+				std::fprintf(stderr, "debug:\t%s=%f\n", "longitude", source->Y);
 			#endif
-			source->longitude -= 360;
+			source->Y -= 360;
 		}
+		assert(90 >= source->X && -90 <= source->X);
+		assert(180 >= source->Y && -180 <= source->Y);
 		return(source);
+	}
+
+	Location* Location::Set(double lat, double lon, double height, const char* name)
+	{
+		this->Type = VectorType_LATLON;
+		this->X = lat;
+		this->Y = lon;
+		this->Z = height;
+		this->Length = 1.0L;
+		this->SetName(name);
+		return(this);
+	}
+	const char* Location::SetName(const char* name)
+	{
+		if(NULL != this->Name)
+		{
+			delete(this->Name);
+			this->Name = NULL;
+		}
+		if(NULL != name)
+		{
+			this->Name = new char[std::strlen(name) +1];
+			*(this->Name) = '\0';
+			std::strcpy(this->Name, name);
+		}
+		return(this->Name);
 	}
 
 	const char* Location::ToString(Location* loc) const
@@ -95,21 +113,34 @@ namespace piScope
 		Location* source = (NULL==loc ?(Location*)this :loc);
 		static char value[80] = {'\0'};
 		size_t pos = 0;
-		if(NULL != source->name)
+		pos += std::snprintf(&value[pos], sizeof(value) -pos, "[%f%s,%f%s,%fm]"
+			, (0>source->X ?-1 :1) * source->X, (0>source->X ?"S" :"N")
+			, (0>source->Y ?-1 :1) * source->Y, (0>source->Y ?"W" :"E")
+			, source->Z);
+		if(NULL != source->Name)
 		{
-			pos += std::snprintf(&value[pos], sizeof(value) -pos, "%s ", source->name);
+			pos += std::snprintf(&value[pos], sizeof(value) -pos, " %s", source->Name);
 		}
-		pos += std::snprintf(&value[pos], sizeof(value) -pos, "[%f%s,%f%s,%dm]"
-			, (0>source->latitude ?-1 :1) * source->latitude, (0>source->latitude ?"S" :"N")
-			, (0>source->longitude ?-1 :1) * source->longitude, (0>source->longitude ?"W" :"E")
-			, source->height);
 		return(&value[0]);
 	}
 
 	Vector3D* Location::ToVector(Location* loc) const
 	{
 		Location* source = (NULL==loc ?(Location*)this :loc);
-		return(new Vector3D(VectorType_LATLON,source->latitude,source->longitude,source->height,0.0));
+		return(new Vector3D(VectorType_LATLON,source->X,source->Y,source->Z,1.0));
+	}
+
+	double Location::GetLatitude(void) const
+	{
+		return(this->X);
+	}
+	double Location::GetLongitude(void) const
+	{
+		return(this->Y);
+	}
+	double Location::GetHeight(void) const
+	{
+		return(this->Z);
 	}
 
 };

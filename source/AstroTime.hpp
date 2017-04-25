@@ -1,6 +1,6 @@
 /*
-**	Orientation (.hpp/.cpp)
-**	handling class for telescope orientation
+**	AstroTime (.hpp/.cpp)
+**	handling class for astronomical time
 **
 **	piScope project https://github.com/march42/piScope
 **	(C) Copyright 2017 by Marc Hefter
@@ -21,27 +21,41 @@
 **	MA 02110-1301 USA.
 */
 
-#ifndef _ORIENTATION_HPP_
-#	define _ORIENTATION_HPP_
+#ifndef _ASTROTIME_HPP_
+#	define _ASTROTIME_HPP_
 
-#	include "Orientation.hpp"
+#	include "TimeStamp.hpp"
+#	include "Location.hpp"
+
+#	include <ctime>
 
 namespace piScope
 {
 
-	class Orientation
+	class AstroTime : public TimeStamp
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
-		//	Local east, north, up (ENU) coordinates
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
+		Location* TimeLocation;
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		Orientation();
-		~Orientation();
+		AstroTime(time_t ts =1, Location* loc =NULL);	//	ts==1 flag, to get current time
+		~AstroTime();
+
+		//	public access methods
+		time_t Set(time_t ts =1);
+		Location* SetLocation(Location* loc =NULL);
+		Location* SetLongitude(float lon =0.0);
+
+		//	public access methods
+		time_t Get(int type =-1) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST)
+		double GetAngleMST(int GMST=true) const;
+		Location* GetLocation(void) const;
+		const char* ToString(int type =-1) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST)
 	};
 
 };
 
-#endif	/* _ORIENTATION_HPP_ */
+#endif	/* _ASTROTIME_HPP_ */

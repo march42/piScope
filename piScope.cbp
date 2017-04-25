@@ -35,10 +35,16 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="../git-i2cdevlib/RaspberryPi_bcm2835/LSM9DS1/LSM9DS1.cpp" />
+		<Unit filename="../git-i2cdevlib/RaspberryPi_bcm2835/LSM9DS1/LSM9DS1.h" />
 		<Unit filename=".gitignore" />
 		<Unit filename="LICENSE" />
 		<Unit filename="Makefile" />
 		<Unit filename="README.md" />
+		<Unit filename="source/AstroTime.cpp" />
+		<Unit filename="source/AstroTime.hpp" />
+		<Unit filename="source/AstroVector.cpp" />
+		<Unit filename="source/AstroVector.hpp" />
 		<Unit filename="source/I2Csensor.cpp" />
 		<Unit filename="source/I2Csensor.hpp" />
 		<Unit filename="source/IMU.cpp" />
@@ -49,14 +55,12 @@
 		<Unit filename="source/LogFile.hpp" />
 		<Unit filename="source/MACROS.h" />
 		<Unit filename="source/Makefile" />
-		<Unit filename="source/Orientation.cpp" />
-		<Unit filename="source/Orientation.hpp" />
 		<Unit filename="source/Telescope.cpp" />
 		<Unit filename="source/Telescope.hpp" />
 		<Unit filename="source/TimeStamp.cpp" />
 		<Unit filename="source/TimeStamp.hpp" />
-		<Unit filename="source/Vector4D.cpp" />
-		<Unit filename="source/Vector4D.hpp" />
+		<Unit filename="source/Vector3D.cpp" />
+		<Unit filename="source/Vector3D.hpp" />
 		<Unit filename="source/i2c-dev.h" />
 		<Unit filename="source/test-i2c.cpp" />
 		<Unit filename="source/test-vector.cpp" />

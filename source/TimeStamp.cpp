@@ -39,10 +39,9 @@
 namespace piScope
 {
 
-	TimeStamp::TimeStamp(time_t ts, float lon)
+	TimeStamp::TimeStamp(time_t ts)
 	{
 		this->Set(ts);
-		this->SetLongitude(lon);
 	}
 	TimeStamp::~TimeStamp()
 	{
@@ -52,91 +51,38 @@ namespace piScope
 	{
 		if(1 == ts)
 		{
-			this->UTC_ts = std::time(NULL);
+			this->UTC = std::time(NULL);
 		}
 		else
 		{
-			this->UTC_ts = ts;
+			this->UTC = ts;
 		}
-		return(this->UTC_ts);
-	}
-	float TimeStamp::SetLongitude(float lon)
-	{
-		this->longitude = lon;
-		return(this->longitude);
+		return(this->UTC);
 	}
 
-	time_t TimeStamp::Get(int type) const
+	time_t TimeStamp::Get(void) const
 	{
-		//	get time stamp (-1=UTC, 0=LMST, 1=GMST, 2=JD, 3=MJD)
-		if(0 == type)
-		{
-			time_t LMST;
-			J2000_UTC2LMST(this->UTC_ts, LMST, this->longitude);
-			return(LMST);
-		}
-		else if(1 == type)
-		{
-			time_t GMST;
-			J2000_UTC2LMST(this->UTC_ts, GMST, 0);
-			return(GMST);
-		}
-		else if(2 == type)
-		{
-			double JD = TIME_UTC2JD(this->UTC_ts);
-			return(JD);
-		}
-		else if(3 == type)
-		{
-			double MJD = TIME_UTC2MJD(this->UTC_ts);
-			return(MJD);
-		}
-		return(this->UTC_ts);
+		return(this->UTC);
 	}
 	double TimeStamp::GetJulianDate(int modified) const
 	{
-		double JD = (0==modified ?TIME_UTC2JD(this->UTC_ts) :TIME_UTC2MJD(this->UTC_ts));
+		double JD = (modified ?TIME_UTC2MJD(this->UTC) :TIME_UTC2JD(this->UTC));
 		return(JD);
 	}
 
-	const char* TimeStamp::ToString(int type) const
+	const char* TimeStamp::ToString(void) const
 	{
-		//	get time stamp (-1=UTC, 0=LMST, 1=GMST, 2=JD, 3=MJD)
-		static char cval[20] = { "MIST\0" };
+		//	get time stamp string
+		static char cval[30] = { "\0" };
 		size_t pos = 0;
-		if(2 == type && 0 == (pos += std::snprintf(&cval[pos], sizeof(cval) -pos, "%f JD", this->GetJulianDate())))
+		cval[pos] = '\0';
+		struct tm * tmval = std::gmtime(&this->UTC);
+		assert(NULL != tmval);
+		if(0 == (pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%Y%m%dT%H%M%SZ", tmval)))
 		{
-			std::sprintf(&cval[0], "snprintf failed.");
+			std::sprintf(&cval[0], "failed:%ld", this->UTC);
 		}
-		else if(3 == type && 0 == (pos += std::snprintf(&cval[pos], sizeof(cval) -pos, "%f JD", this->GetJulianDate(1))))
-		{
-			std::sprintf(&cval[0], "snprintf failed.");
-		}
-		else
-		{
-			time_t tsval = this->Get(type);
-			struct tm * tmval = std::gmtime(&tsval);
-			assert(NULL!=tmval);
-			if(-1 == type && 0 == (pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%Y%m%dT%H%M%SZ", tmval)))
-			{
-				std::sprintf(&cval[0], "strftime failed. %ld", tsval);
-			}
-			else if(1 == type && 0 == (pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%H:%M:%S GMST", tmval)))
-			{
-				std::sprintf(&cval[0], "strftime failed. %ld", tsval);
-			}
-			else if(0 == type && 0 == (pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%H:%M:%S LMST", tmval)))
-			{
-				std::sprintf(&cval[0], "strftime failed. %ld", tsval);
-			}
-			else
-			{
-				pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%Y%m%dT%H%M%S ????", tmval);
-			}
-		}
-		#if !defined(NDEBUG)
-		std::fprintf(stderr, "debug:\tToString: %d = %s\n", type, &cval[0]);
-		#endif
+		assert('\0' != cval[0]);
 		return(&cval[0]);
 	}
 

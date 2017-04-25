@@ -24,35 +24,41 @@
 #ifndef _LOCATION_HPP_
 #	define _LOCATION_HPP_
 
-#	include "Vector4D.hpp"
+#	include "Vector3D.hpp"
 
 #	include <unistd.h>
 
 namespace piScope
 {
 
-	class Location
+	class Location : public Vector3D
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
-		double latitude;	//	degrees north, -90=south, 0=equator, +90=north
-		double longitude;	//	degrees east, -90=west, 0=greenwich, +90=east, -180/+180=opposite greenwich
-		int height;	//	meter height above sea level
-		char* name;
+		char* Name;
+		/*
+		double& Latitude = X;	//	degrees north, -90=south, 0=equator, +90=north
+		double& Longitude = Y;	//	degrees east, -90=west, 0=greenwich, +90=east, -180/+180=opposite greenwich
+		double& Height = Z;	//	meter height above sea level
+		*/
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		Location(double lat =0.0, double lon =0.0, int height =0, const char* name =NULL);
-		Location(float lat, float lon, float height);
+		Location(double lat =0.0, double lon =0.0, double height =0.0, const char* name =NULL);
 		~Location();
 
 		//	public manipulation methods
 		Location* Validate(Location* loc =NULL);
+		Location* Set(double lat, double lon, double height, const char* name =NULL);
+		const char* SetName(const char* name);
 
 		//	public access methods
 		const char* ToString(Location* loc =NULL) const;
 		Vector3D* ToVector(Location* loc =NULL) const;
+		double GetLatitude(void) const;
+		double GetLongitude(void) const;
+		double GetHeight(void) const;
 	};
 
 };

@@ -1,6 +1,6 @@
 /*
-**	Vector4D (.hpp/.cpp)
-**	handling class for 3D vector with time extension
+**	Vector3D (.hpp/.cpp)
+**	handling class for 3D vector
 **
 **	piScope project https://github.com/march42/piScope
 **	(C) Copyright 2017 by Marc Hefter
@@ -21,7 +21,7 @@
 **	MA 02110-1301 USA.
 */
 
-#include "Vector4D.hpp"
+#include "Vector3D.hpp"
 #include "MACROS.h"
 
 #include <cassert>
@@ -36,11 +36,21 @@ namespace piScope
 {
 
 	Vector3D::Vector3D(VectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen)
-			: VectorType(vecType), VectorX(vecX), VectorY(vecY), VectorZ(vecZ), VectorLength(vecLen)
+			: Type(vecType), X(vecX), Y(vecY), Z(vecZ), Length(vecLen)
 	{
 	}
 	Vector3D::~Vector3D()
 	{
+	}
+
+	Vector3D* Vector3D::Set(VectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen)
+	{
+		this->Type = vecType;
+		this->X = vecX;
+		this->Y = vecY;
+		this->Z = vecZ;
+		this->Length = vecLen;
+		return(this);
 	}
 
 	Vector3D* Vector3D::Convert2ECEF(Vector3D* convertVector)
@@ -48,30 +58,30 @@ namespace piScope
 		Vector3D* source = (NULL==convertVector ?this :convertVector);
 		Vector3D* destination = (NULL==convertVector ?(new Vector3D) :convertVector);
 		//	convert to ECEF
-		if(VectorType_LATLON == source->VectorType)
+		if(VectorType_LATLON == source->Type)
 		{
 			//	ECEF-r = EMR + height
 			//	ECEF-Z = sin(latitude)
 			//	ECEF-r' = cos(latitude)
 			//	ECEF-X = r' * cos(longitude)
 			//	ECEF-Y = r' * sin(longitude)
-			double latlonX = std::cos(DEG2RAD(source->VectorX)) * std::cos(DEG2RAD(source->VectorY));
-			double latlonY = std::cos(DEG2RAD(source->VectorX)) * std::sin(DEG2RAD(source->VectorY));
-			double latlonZ = std::sin(DEG2RAD(source->VectorX));
+			double latlonX = std::cos(DEG2RAD(source->X)) * std::cos(DEG2RAD(source->Y));
+			double latlonY = std::cos(DEG2RAD(source->X)) * std::sin(DEG2RAD(source->Y));
+			double latlonZ = std::sin(DEG2RAD(source->X));
 			#if !defined(NDEBUG)
 				std::fprintf(stderr, "debug:\tconverting LATLON=[%f,%f,%f] to ECEF=[%f,%f,%f]\n"
-					, source->VectorX, source->VectorY, source->VectorZ
+					, source->X, source->Y, source->Z
 					, latlonX, latlonY, latlonZ);
 				std::fprintf(stderr, "debug:\tsin(lat)=%f, cos(lat)=%f, sin(lon)=%f, cos(lon)=%f\n"
-					, std::sin(DEG2RAD(source->VectorX)), std::cos(DEG2RAD(source->VectorX))
-					, std::sin(DEG2RAD(source->VectorY)), std::cos(DEG2RAD(source->VectorY)));
+					, std::sin(DEG2RAD(source->X)), std::cos(DEG2RAD(source->X))
+					, std::sin(DEG2RAD(source->Y)), std::cos(DEG2RAD(source->Y)));
 			#endif
 			//	prepare destination vector
-			destination->VectorLength = LATLON_EARTHMR + source->VectorZ;
-			destination->VectorX = latlonX;
-			destination->VectorY = latlonY;
-			destination->VectorZ = latlonZ;
-			destination->VectorType = VectorType_ECEF;
+			destination->Length = LATLON_EARTHMR + source->Z;
+			destination->X = latlonX;
+			destination->Y = latlonY;
+			destination->Z = latlonZ;
+			destination->Type = VectorType_ECEF;
 		}
 		/*	no accurate conversion possible, just needs setting of base reference center/fix
 		else if(VectorType_3DONLY >= source->VectorType)
@@ -79,21 +89,21 @@ namespace piScope
 		}
 		*/
 		/*	no conversion possible without known location
-		else if(VectorType_LocalENU == source->VectorType)
+		else if(VectorType_LocalENU == source->Type)
 		{
 		}
-		else if(VectorType_LocalNED == source->VectorType)
+		else if(VectorType_LocalNED == source->Type)
 		{
 		}
 		*/
 		/*	conversion impossible without time stamp and center/fix
-		else if(VectorType_J2000 == source->VectorType)
+		else if(VectorType_J2000 == source->Type)
 		{
 			//	calculate Earth's rotation since J2000 epoch
 			//	apply ecliptic rotation
 		}
 		*/
-		assert(VectorType_ECEF == destination->VectorType);
+		assert(VectorType_ECEF == destination->Type);
 		return(destination);
 	}
 
@@ -101,46 +111,17 @@ namespace piScope
 	{
 		static char buffer[50] = {'\0'};
 		const char* type[] = { "3D","ECEF","LATLON","Local ENU","Local NED","J2000" };
-		if(0 > this->VectorType || (char)sizeof(type) <= this->VectorType)
+		if(0 > this->Type || (char)sizeof(type) <= this->Type)
 		{
 			std::snprintf(&buffer[0],sizeof(buffer), "INVALID [%f,%f,%f] l=%f"
-				, this->VectorX,this->VectorY,this->VectorZ, this->VectorLength);
+				, this->X,this->Y,this->Z, this->Length);
 		}
 		else
 		{
-			std::snprintf(&buffer[0],sizeof(buffer), "%s [%f,%f,%f] l=%f", type[this->VectorType]
-				, this->VectorX,this->VectorY,this->VectorZ, this->VectorLength);
+			std::snprintf(&buffer[0],sizeof(buffer), "%s [%f,%f,%f] l=%f", type[this->Type]
+				, this->X,this->Y,this->Z, this->Length);
 		}
 		return(&buffer[0]);
-	}
-
-	Vector4D::Vector4D(VectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen, Vector3D vecPos)
-			: Vector3D(vecType,vecX,vecY,vecZ,vecLen), VectorOffset(vecPos)
-	{
-		this->VectorTimestamp.Set();
-		if(VectorType_LATLON == vecPos.VectorType)
-		{
-			this->VectorTimestamp.SetLongitude(vecPos.VectorY);
-		}
-	}
-	Vector4D::~Vector4D()
-	{
-	}
-
-	Vector3D* Vector4D::SetOffsetLATLON(double latX, double lonY, double heightZ)
-	{
-		this->VectorOffset.VectorType = VectorType_LATLON;
-		this->VectorOffset.VectorLength = 1.0;
-		this->VectorOffset.VectorX = latX;
-		this->VectorOffset.VectorY = lonY;
-		this->VectorTimestamp.SetLongitude(lonY);
-		this->VectorOffset.VectorZ = heightZ;
-		return(&this->VectorOffset);
-	}
-
-	const char* Vector4D::ToString(void) const
-	{
-		return(Vector3D::ToString());
 	}
 
 };
