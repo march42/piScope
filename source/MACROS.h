@@ -26,8 +26,8 @@
 
 	//	DMS2DEG = D + (M /60) + (S /3600)
 #	define LATLON_DMS2DEG(D,M,S) ((D) + ((M) /60.0L) + ((S) /3600.0L))
-	//	HMS2DEG = (H /24) + (M /60) + (S /3600)
-#	define LATLON_HMS2DEG(D,M,S) (((H) /24.0L) + ((M) /60.0L) + ((S) /3600.0L))
+	//	HMS2DEG = (H *360/24) + (M *15/60) + (S *15/3600)
+#	define LATLON_HMS2DEG(D,M,S) (((H) *(360.0L/24)) + ((M) *(15.0L/60.0L)) + ((S) *(15.0L/3600.0L)))
 	//	LATLON_MSL=6371km mean sea level - average radius of earth sphere
 #	define LATLON_EARTHMR (6371000.0L)
 

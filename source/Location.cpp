@@ -74,17 +74,7 @@ namespace piScope
 	const char* Location::ToString(Location* loc) const
 	{
 		Location* source = (NULL==loc ?(Location*)this :loc);
-		static char value[80] = {'\0'};
-		size_t pos = 0;
-		pos += std::snprintf(&value[pos], sizeof(value) -pos, "[%f%s,%f%s,%fm]"
-			, (0>source->X ?-1 :1) * source->X, (0>source->X ?"S" :"N")
-			, (0>source->Y ?-1 :1) * source->Y, (0>source->Y ?"W" :"E")
-			, source->Z);
-		if(NULL != source->Name)
-		{
-			pos += std::snprintf(&value[pos], sizeof(value) -pos, " %s", source->Name);
-		}
-		return(&value[0]);
+		return(source->Vector3D::ToString());
 	}
 
 	Vector3D* Location::ToVector(Location* loc) const

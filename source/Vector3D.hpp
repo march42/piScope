@@ -101,7 +101,7 @@ namespace piScope
 		double Length;	//	vector length scale factor, !=0 offset, ==0 rotation
 
 		//	internal handling methods
-		bool FixLatLon(void);	//	return true=changed
+		bool FixLatLon(double* lat =NULL, double* lon =NULL);	//	return true=changed
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
@@ -121,7 +121,9 @@ namespace piScope
 
 	//	some small helpers
 	const char* Angle_Deg2HMS(double angle, double* H=NULL, double* M=NULL, double* S=NULL);
+	const char* Angle_Rad2HMS(double angle, double* H=NULL, double* M=NULL, double* S=NULL);
 	const char* Angle_Deg2DMS(double angle, double* D=NULL, double* M=NULL, double* S=NULL);
+	const char* Angle_Rad2DMS(double angle, double* D=NULL, double* M=NULL, double* S=NULL);
 
 };
 

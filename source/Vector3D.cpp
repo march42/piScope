@@ -53,7 +53,7 @@ namespace piScope
 		return(this);
 	}
 
-	bool Validate(bool checkonly)
+	bool Vector3D::Validate(bool checkonly)
 	{
 		bool invalid = false;
 		switch(this->Type)
@@ -99,18 +99,19 @@ namespace piScope
 		}
 		return(!invalid);	// negate result
 	}
-	bool FixLatLon(void)
+	bool Vector3D::FixLatLon(double* lat, double* lon)
 	{
-		if(VectorType_LATLON != this->Type)
+		if(NULL == lat && NULL == lon && VectorType_LATLON != this->Type)
 		{
 			return(-1);
 		}
-		double LAT = this->X;
-		double LON = this->Y;
+		double LAT = (NULL==lat ?this->X :*lat);
+		double LON = (NULL==lon ?this->Y :*lon);
+		int fullrotation;
 		if(-90 > LAT || 90 < LAT)
 		{
 			//	just remove full rotations
-			if(0 != (int fullrotation = LAT / 360))
+			if(0 != (fullrotation = LAT / 360))
 			{
 				//	400 will give 1, -400 => -1, -1234 => -3
 				LAT -= (360 * fullrotation);
@@ -122,11 +123,11 @@ namespace piScope
 			**	180<=a<270	-180, flip lon-180
 			**	270<a<360	-360
 			*/
-			if(90 >= this-X && -90 <= LAT)
+			if(90 >= LAT && -90 <= LAT)
 			{
 				//	PRETTY
 			}
-			else if(270 <= this-X)
+			else if(270 <= LAT)
 			{
 				LAT -= 360;
 			}
@@ -145,7 +146,7 @@ namespace piScope
 		}
 		if(180 < LON || -180 > LON)
 		{
-			if(0 != (int fullrotation = LON / 360))
+			if(0 != (fullrotation = LON / 360))
 			{
 				LON -= (360.0L * fullrotation);	// -400 => -360 = -40, PRETTY
 			}
@@ -163,10 +164,10 @@ namespace piScope
 			}
 		}
 		//	just to be sure
-		assume(90 >= LAT && -90 <= LAT);
-		assume(180 >= LON && -180 <= LON);
+		assert(90 >= LAT && -90 <= LAT);
+		assert(180 >= LON && -180 <= LON);
 		//	store values, if changed
-		if(LAT != this->X || LON != this->Y)
+		if((NULL == lat && NULL == lon) && (LAT != this->X || LON != this->Y))
 		{
 			#if !defined(NDEBUG)
 				std::fprintf(stderr, "debug:\t%s:\tfixing to %f,%f\n", "Vector3D::FixLatLon", LAT,LON);
@@ -174,6 +175,17 @@ namespace piScope
 			this->X = LAT;
 			this->Y = LON;
 			return(true);	//	values have changed
+		}
+		else
+		{
+			if(NULL != lat)
+			{
+				*lat = LAT;
+			}
+			if(NULL != lon)
+			{
+				*lon = LON;
+			}
 		}
 		//	nothing changed
 		return(false);
@@ -237,7 +249,26 @@ namespace piScope
 	{
 		static char buffer[50] = {'\0'};
 		const char* type[] = { "3D","ECEF","LATLON","Local ENU","Local NED","J2000" };
-		if(0 > this->Type || (char)sizeof(type) <= this->Type)
+		if(VectorType_LATLON > this->Type)
+		{
+			//	clean values
+			double lat = this->X, latD,latM,latS;
+			double lon = this->Y, lonD,lonM,lonS;
+			((Vector3D*)this)->FixLatLon(&lat,&lon);
+			//	convert
+			latM = modf(lat, &latD);
+			latS = modf((latM * 60), &latM);
+			latS *= 60;
+			lonM = modf(lon, &lonD);
+			lonS = modf((lonM * 60), &lonM);
+			lonS *= 60;
+			//	print to buffer
+			std::snprintf(&buffer[0], sizeof(buffer), "%s [%02d%s%02d\'%f\",%02d%s%02d\'%f\",%fm]", type[this->Type]
+				, (0>latD ?-1 :1) * (int)latD, (0>latD ?"S" :"N"), (int)latM, latS
+				, (0>lonD ?-1 :1) * (int)lonD, (0>lonD ?"W" :"E"), (int)lonM, lonS
+				, this->Z);
+		}
+		else if(0 > this->Type || (char)sizeof(type) <= this->Type)
 		{
 			std::snprintf(&buffer[0],sizeof(buffer), "INVALID [%f,%f,%f] l=%f"
 				, this->X,this->Y,this->Z, this->Length);
@@ -250,7 +281,7 @@ namespace piScope
 		return(&buffer[0]);
 	}
 
-	const char* Angle_Deg2HMS(double angle, double* H=NULL, double* M=NULL, double* S=NULL)
+	const char* Angle_Deg2HMS(double angle, double* H, double* M, double* S)
 	{
 		static char value[30] = {'\0'};
 		size_t pos = 0;
@@ -281,20 +312,24 @@ namespace piScope
 		*/
 		if(NULL != H)
 		{
-			*H = hour + (NULL==M ?((minute + (NULL==S ?(second /60))) /60));
+			*H = hour + (NULL==M ?((minute + (NULL==S ?(second /60) :0)) /60) :0);
 		}
 		if(NULL != M)
 		{
-			*M = (NULL==H ?(hour *60)) + minute + (NULL==S ?(second /60));
+			*M = (NULL==H ?(hour *60) :0) + minute + (NULL==S ?(second /60) :0);
 		}
 		if(NULL != S)
 		{
-			*S = (NULL==M ?((minute + (NULL==H ?(hour *60))) *60)) + second;
+			*S = (NULL==M ?((minute + (NULL==H ?(hour *60) :0)) *60) :0) + second;
 		}
 		//	done
 		return(&value[0]);
 	}
-	const char* Angle_Deg2DMS(double angle, double* D=NULL, double* M=NULL, double* S=NULL)
+	const char* Angle_Rad2HMS(double angle, double* H, double* M, double* S)
+	{
+		return(Angle_Deg2HMS(RAD2DEG(angle), H,M,S));
+	}
+	const char* Angle_Deg2DMS(double angle, double* D, double* M, double* S)
 	{
 		static char value[30] = {'\0'};
 		size_t pos = 0;
@@ -312,18 +347,22 @@ namespace piScope
 		//	copy to return variables
 		if(NULL != D)
 		{
-			*D = degree + (NULL==M ?((minute + (NULL==S ?(second /60))) /60));
+			*D = degree + (NULL==M ?((minute + (NULL==S ?(second /60) :0)) /60) :0);
 		}
 		if(NULL != M)
 		{
-			*M = (NULL==D ?(degree *60)) + minute + (NULL==S ?(second /60));
+			*M = (NULL==D ?(degree *60) :0) + minute + (NULL==S ?(second /60) :0);
 		}
 		if(NULL != S)
 		{
-			*S = (NULL==M ?((minute + (NULL==D ?(degree *60))) *60)) + second;
+			*S = (NULL==M ?((minute + (NULL==D ?(degree *60) :0)) *60) :0) + second;
 		}
 		//	done
 		return(&value[0]);
+	}
+	const char* Angle_Rad2DMS(double angle, double* D, double* M, double* S)
+	{
+		return(Angle_Deg2DMS(RAD2DEG(angle), D,M,S));
 	}
 
 };
