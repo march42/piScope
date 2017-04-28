@@ -45,8 +45,11 @@
 
 	//	J2000_OBLIQUITY= 23° 26' 21.406" obliquity - angle between equatorial plane and ecliptic
 #	define J2000_OBLIQUITY LATLON_DMS2DEG(23,26,21.406)
-	//	J2000 epoch is January 1, 2000, 11:58:55.816 UTC (~ 12.00 GMT)
-#	define J2000_EPOCH_UTC (946728000)
+	//	J2000.0 epoch is exactly 12.00 noon in terrestrial time TT
+#	define J2000_EPOCH_TT (946728000)
+	//	J2000.0 epoch is January 1, 2000, 11:58:55.816 UTC (~ 12.00 GMT)
+#	define J2000_EPOCH_UTC (946727936)
+	//	J2000.0 epoch in Julian Day format is 2451545.0
 #	define J2000_EPOCH_JD (2451545.0L)
 	//	Modified Julian Date is number of days since midnight on November 17, 1858. (=2400000.5 days after day 0 of the Julian calendar)
 #	define J2000_EPOCH_MJD (2451544.0L - 2400000.5L)

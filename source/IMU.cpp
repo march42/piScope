@@ -2,6 +2,7 @@
  *	handling of IMU (inertial measurement unit)
  */
 
+#include "MACROS.h"
 #include "IMU.hpp"
 
 #include <cstdio>
@@ -11,6 +12,12 @@
 
 #include <cmath>
 #include <climits>
+
+#if defined(USE_MADGWICK_AHRS)
+	namespace Madgwick { extern "C" {
+#		include "../MadgwickAHRS/MadgwickAHRS.h"
+	}};
+#endif // defined
 
 using namespace std;
 namespace rpiScope
@@ -342,13 +349,55 @@ namespace rpiScope
 	}
 	void IMU_MARGdata::SetFullScale(double gyro, double acc, double mag)
 	{
-		this->DataGyroscope.FullScale = gyro;
-		this->DataAcceleration.FullScale = acc;
-		this->DataMagnetometer.FullScale = mag;
+		this->DataGyroscope.FullScale = gyro;	//dps (degrees/sec)
+		this->DataAcceleration.FullScale = acc;	//g (1g = 9,8 m/s^2 earth gravity)
+		this->DataMagnetometer.FullScale = mag;	//gauss
+	}
+
+	void IMU_MARGdata::MadgwickAHRSupdate(void)
+	{
+#		if defined(USE_MADGWICK_AHRS)
+		//	need gyro data in radian per second (not dps) =*PI/180
+		double gyroscale = DEG2RAD(this->DataGyroscope.FullScale);
+		double gx = gyroscale * this->DataGyroscope.rawX();
+		double gy = gyroscale * this->DataGyroscope.rawY();
+		double gz = gyroscale * this->DataGyroscope.rawZ();
+		double accscale = this->DataAcceleration.FullScale;
+		double ax = accscale * this->DataAcceleration.rawX();
+		double ay = accscale * this->DataAcceleration.rawY();
+		double az = accscale * this->DataAcceleration.rawZ();
+		double magscale = this->DataMagnetometer.FullScale;
+		double mx = magscale * this->DataMagnetometer.rawX();
+		double my = magscale * this->DataMagnetometer.rawY();
+		double mz = magscale * this->DataMagnetometer.rawZ();
+		if(0.1 < (gx+gy+gz))
+		{
+			//	2dps=0.035rps, 10dps=0.175rps
+			Madgwick::beta = 0.001;
+		}
+		else //if(0.1 < (gx+gy+gz))
+		{
+			Madgwick::beta = 0.1;
+		}
+		Madgwick::MadgwickAHRSupdate(gx,gy,gz, ax,ay,az, mx,my,mz );
+#		endif
 	}
 
 	IMU_Vector* IMU_MARGdata::Orientation(void)
 	{
+#		if defined(USE_MADGWICK_AHRS)
+		//	q0,q1,q2,q3 orientation quaternion
+		//float getPitch(){return atan2f(2.0f * q2 * q3 - 2.0f * q0 * q1, 2.0f * q0 * q0 + 2.0f * q3 * q3 - 1.0f);};
+		//float getRoll(){return -1.0f * asinf(2.0f * q1 * q3 + 2.0f * q0 * q2);};
+		//float getYaw(){return atan2f(2.0f * q1 * q2 - 2.0f * q0 * q3, 2.0f * q0 * q0 + 2.0f * q1 * q1 - 1.0f);};
+		double roll = std::atan2(Madgwick::q0*Madgwick::q1 + Madgwick::q2*Madgwick::q3, 0.5f - Madgwick::q1*Madgwick::q1 - Madgwick::q2*Madgwick::q2);
+		double pitch = std::asin(-2.0f * (Madgwick::q1*Madgwick::q3 - Madgwick::q0*Madgwick::q2));
+		double yaw = std::atan2(Madgwick::q1*Madgwick::q2 + Madgwick::q0*Madgwick::q3, 0.5f - Madgwick::q2*Madgwick::q2 - Madgwick::q3*Madgwick::q3);
+		roll *= (180.0L / M_PI);
+		pitch *= (180.0L / M_PI);
+		yaw *= (180.0L / M_PI);
+		return(new IMU_Vector(roll,pitch,yaw));
+#		else
 		//	get sensor data and normalize
 		IMU_Vector* gyro = this->Gyroscope();
 		gyro->Normalize();
@@ -367,6 +416,7 @@ namespace rpiScope
 		delete(acc);
 		//	return
 		return(value);
+#		endif // defined
 	}
 
 	IMU_Vector* IMU_MARGdata::Fusion3D(void)

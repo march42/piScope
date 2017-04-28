@@ -7,6 +7,9 @@
 		<Option makefile_is_custom="1" />
 		<Option pch_mode="2" />
 		<Option compiler="gnu_gcc_compiler_for_raspberry_pi" />
+		<Compiler>
+			<Add option="-DUSE_MADGWICK_AHRS" />
+		</Compiler>
 		<Build>
 			<Target title="Debug">
 				<Option output="bin/Debug/piScope" prefix_auto="1" extension_auto="1" />
@@ -39,6 +42,10 @@
 		<Unit filename="../git-i2cdevlib/RaspberryPi_bcm2835/LSM9DS1/LSM9DS1.h" />
 		<Unit filename=".gitignore" />
 		<Unit filename="LICENSE" />
+		<Unit filename="MadgwickAHRS/MadgwickAHRS.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="MadgwickAHRS/MadgwickAHRS.h" />
 		<Unit filename="Makefile" />
 		<Unit filename="README.md" />
 		<Unit filename="source/AstroTime.cpp" />

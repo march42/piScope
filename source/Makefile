@@ -14,9 +14,10 @@ test-i2csensor_CPP = test-i2csensor.cpp
 test-i2csensor_O = $(test-i2csensor_CPP:.cpp=.o)
 test-i2csensor_OBJ = $(test-i2csensor_CPP:.cpp=.obj)
 
-CCFLAGS = -O4 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG
+CCFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG
 #CCFLAGS += -DUSE_LINUX_I2CDEV
-LDFLAGS = -O4 -s -lstdc++ -pthread -lm
+CCFLAGS += -DUSE_MADGWICK_AHRS
+LDFLAGS = -O3 -s -lstdc++ -pthread -lm
 
 ifeq ($(OS),Windows_NT)
 	RM = del /Q /F
@@ -24,6 +25,10 @@ ifeq ($(OS),Windows_NT)
 else
 	RM = rm -f
 	RRM = rm -f -r
+endif
+
+ifneq (,$(findstring USE_MADGWICK_AHRS,$(CCFLAGS)))
+LIBRARIES_O += MadgwickAHRS.o
 endif
 
 .SUFFIXES: .cpp .o .obj
@@ -41,6 +46,9 @@ clean:
 	-$(RM) test-i2csensor test-vector
 	-$(RM) test-i2csensor.exe test-vector.exe
 
+#-include file
+MadgwickAHRS.o: ../MadgwickAHRS/MadgwickAHRS.c
+	$(CC)  $(CCFLAGS) $(CCEXTRA) $< -c -o $@
 
 test-i2csensor: $(test-i2csensor_O) $(LIBRARIES_O)
 	$(CC) $(LDFLAGS) $(LDEXTRA) $(test-i2csensor_O) $(LIBRARIES_O) -o $@

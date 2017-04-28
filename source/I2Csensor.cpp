@@ -25,6 +25,12 @@
 #include <climits>
 #include <cassert>
 
+#if defined(USE_MADGWICK_AHRS)
+	namespace Madgwick { extern "C" {
+#		include "../MadgwickAHRS/MadgwickAHRS.h"
+	}};
+#endif // defined
+
 using namespace std;
 namespace rpiScope
 {
@@ -276,7 +282,8 @@ namespace rpiScope
 		return (0 < this->fdbus);
 	}
 
-	I2Csensor::I2Csensor(I2Csensortype i2csensor, const int i2cdeviceaddress, const char* i2cbusdevice) : I2Cdevice(i2cdeviceaddress, i2cbusdevice)
+	I2Csensor::I2Csensor(I2Csensortype i2csensor, const int i2cdeviceaddress, const char* i2cbusdevice)
+		: I2Cdevice(i2cdeviceaddress, i2cbusdevice), datarate(0)
 	{
 #		if defined(DEBUG4)
 		//	function, step, extra
@@ -328,16 +335,17 @@ namespace rpiScope
 		//	deinit
 		if(I2C_LSM9DS1 == this->sensortype)
 		{
+			//	reboot memory content
+			this->I2Cselect(this->i2caddress_acc);
+			this->I2Cwrite(0x22, 0b10000001);	//	REBOOT memory content
+			this->I2Cselect(this->i2caddress_mag);
+			this->I2Cwrite(0x21, 0b00001100);	//	REBOOT memory content
 			//	gyroscope, accelerometer
 			this->I2Cselect(this->i2caddress_acc);
-			this->I2Cwrite(0x22, 0b10000000);	//	REBOOT memory content
-			usleep(1000);
 			this->I2Cwrite(0x10, 0b00000000);	//	POWER DOWN gyro
 			this->I2Cwrite(0x20, 0b00000000);	//	POWER DOWN acc
 			//	magnetometer
 			this->I2Cselect(this->i2caddress_mag);
-			this->I2Cwrite(0x21, 0b00001000);	//	REBOOT memory content
-			usleep(1000);
 			this->I2Cwrite(0x22, 0b00000011);	//	POWER DOWN mag
 		}
 		//	stop and clean threads
@@ -351,11 +359,14 @@ namespace rpiScope
 		{
 			this->I2Cselect(this->i2caddress_acc);
 			BUFFER_I2CREAD_BLOCK(0,0x04,0x0D);
+			BUFFER_I2CREAD_BLOCK(0,0x0F,0x17);
 			BUFFER_I2CREAD_BLOCK(0,0x18,0x1D);	// gyro, should restart at 0x18 afterwards
 			BUFFER_I2CREAD_BLOCK(0,0x1E,0x24);
 			BUFFER_I2CREAD_BLOCK(0,0x26,0x27);
 			BUFFER_I2CREAD_BLOCK(0,0x28,0x2D);	// acc, should restart at 0x28 afterwards
 			BUFFER_I2CREAD_BLOCK(0,0x2E,0x37);
+			assert(0 != (BUFFER_REGISTER(0,0x10) &0b11100000));	//	000==powerdown
+			assert(0 != (BUFFER_REGISTER(0,0x20) &0b11100000));	//	000==powerdown
 			this->I2Cselect(this->i2caddress_mag);
 			BUFFER_I2CREAD_BLOCK(1,0x05,0x0A);
 			BUFFER_I2CREAD_BLOCK(1,0x0F,0x0F);
@@ -363,6 +374,7 @@ namespace rpiScope
 			BUFFER_I2CREAD_BLOCK(1,0x27,0x27);
 			BUFFER_I2CREAD_BLOCK(1,0x28,0x2D);	// mag, should restart at 0x28 afterwards
 			BUFFER_I2CREAD_BLOCK(1,0x30,0x33);
+			assert(0 == (BUFFER_REGISTER(1,0x22) &0b00000010));	//	10/11==powerdown
 			//	set full scale
 			float gyro = 1.0;	// dps/LSB
 			if(0b00000000 == (BUFFER_REGISTER(0,0x10) &0b00011000))
@@ -390,6 +402,43 @@ namespace rpiScope
 			else if(0b01100000 == (BUFFER_REGISTER(1,0x21) &0b01100000))
 				mag = 0.00058;//16.0/32768;
 			this->IMUvalue.SetFullScale(gyro, acc, mag);
+			//	sample frequency
+			float ODRG = 0.0;
+			switch(BUFFER_REGISTER(0,0x10) &0b11100000)
+			{
+				//case 0b00000000:	ODRG = 0; break;	//	power down
+				case 0b00100000:	ODRG = 14.9; break;
+				case 0b01000000:	ODRG = 59.5; break;
+				case 0b01100000:	ODRG = 119; break;
+				case 0b10000000:	ODRG = 238; break;
+				case 0b10100000:	ODRG = 476; break;
+				case 0b11000000:	ODRG = 952; break;
+			}
+			float ODRA = 0.0;
+			switch(BUFFER_REGISTER(0,0x20) &0b11100000)
+			{
+				//case 0b00000000:	ODRA = 0; break;	//	power down
+				case 0b00100000:	ODRA = 10; break;
+				case 0b01000000:	ODRA = 50; break;
+				case 0b01100000:	ODRA = 119; break;
+				case 0b10000000:	ODRA = 238; break;
+				case 0b10100000:	ODRA = 476; break;
+				case 0b11000000:	ODRA = 952; break;
+			}
+			float ODRM = 0.0;
+			switch(BUFFER_REGISTER(1,0x20) &0b00011100)
+			{
+				case 0b00000000:	ODRG = 0.625; break;
+				case 0b00000100:	ODRG = 1.25; break;
+				case 0b00001000:	ODRG = 2.5; break;
+				case 0b00001100:	ODRG = 5; break;
+				case 0b00010000:	ODRG = 10; break;
+				case 0b00010100:	ODRG = 20; break;
+				case 0b00011000:	ODRG = 40; break;
+				case 0b00011100:	ODRG = 80; break;
+			}
+			this->datarate = ((ODRG>ODRA ?ODRA=ODRG :ODRG=ODRA)>ODRM ?ODRM=ODRG :ODRG=ODRM);	//	find maximum
+			//if(10 > this->datarate) this->datarate = 10;
 		}
 		else if(I2C_BNO055 == this->sensortype)
 		{
@@ -406,6 +455,10 @@ namespace rpiScope
 		{
 			perror("I2Cread2buffer needs a known sensor type");
 		}
+#		if defined(USE_MADGWICK_AHRS)
+		Madgwick::sampleFreq = this->datarate;
+#		endif
+		this->IMUvalueUpdate();
 #		if defined(DEBUG4)
 		//	function, step, extra
 		printf("\t%s\t%s\t%s\n", "I2Cread2buffer", "done", "");
@@ -414,28 +467,75 @@ namespace rpiScope
 
 	void I2Csensor::I2Creadimu(void)
 	{
-		int16_t X = 0;
-		int16_t Y = 0;
-		int16_t Z = 0;
 		this->I2Copen();
 		if(I2C_LSM9DS1 == this->sensortype)
 		{
 			this->I2Cselect(this->i2caddress_acc);
 			BUFFER_I2CREAD_BLOCK(0,0x18,0x1D);	// should restart at 0x18 afterwards
-			X = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x19)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x18)]);
-			Y = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1B)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1A)]);
-			Z = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1D)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1C)]);
-			this->IMUvalue.PushGyroscope(X,Y,Z);
 			BUFFER_I2CREAD_BLOCK(0,0x28,0x2D);	// should restart at 0x28 afterwards
-			X = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x29)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x28)]);
-			Y = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2B)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2A)]);
-			Z = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2D)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2C)]);
-			this->IMUvalue.PushAcceleration(X,Y,Z);
 			this->I2Cselect(this->i2caddress_mag);
 			BUFFER_I2CREAD_BLOCK(1,0x28,0x2D);	// should restart at 0x28 afterwards
-			X = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x29)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x28)]);
-			Y = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2B)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2A)]);
-			Z = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2D)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2C)]);
+		}
+		else if(I2C_BNO055 == this->sensortype)
+		{
+			this->I2Cread2buffer();
+		}
+		else
+		{
+			this->I2Cread2buffer();
+		}
+		this->IMUvalueUpdate();
+#		if defined(DEBUG4)
+		//	function, step, extra
+		printf("\t%s\t%s\t%s\n", "I2Creadimu", "done", "");
+#		endif
+	}
+
+	void I2Csensor::IMUvalueUpdate(void)
+	{
+		int16_t X = 0;
+		int16_t Y = 0;
+		int16_t Z = 0;
+		if(I2C_LSM9DS1 == this->sensortype)
+		{
+			if(0 == (BUFFER_REGISTER(0,0x22) &0b00000010))	// BLE selection
+			{
+				X = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x19)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x18)]);
+				Y = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1B)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1A)]);
+				Z = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1D)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1C)]);
+			}
+			else
+			{
+				X = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x18)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x19)]);
+				Y = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1A)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1B)]);
+				Z = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1C)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x1D)]);
+			}
+			this->IMUvalue.PushGyroscope(X,Y,Z);
+			if(0 == (BUFFER_REGISTER(0,0x22) &0b00000010))	// BLE selection
+			{
+				X = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x29)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x28)]);
+				Y = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2B)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2A)]);
+				Z = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2D)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2C)]);
+			}
+			else
+			{
+				X = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x28)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x29)]);
+				Y = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2A)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2B)]);
+				Z = (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2C)] <<8) | (this->DataBuffer[((0*I2C_BUFFER_PAGESIZE) +0x2D)]);
+			}
+			this->IMUvalue.PushAcceleration(X,Y,Z);
+			if(0 == (BUFFER_REGISTER(1,0x23) &0b00000010))	// BLE selection
+			{
+				X = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x29)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x28)]);
+				Y = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2B)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2A)]);
+				Z = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2D)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2C)]);
+			}
+			else
+			{
+				X = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x28)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x29)]);
+				Y = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2A)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2B)]);
+				Z = (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2C)] <<8) | (this->DataBuffer[((1*I2C_BUFFER_PAGESIZE) +0x2D)]);
+			}
 			this->IMUvalue.PushMagnetometer(X,Y,Z);
 		}
 		else if(I2C_BNO055 == this->sensortype)
@@ -446,10 +546,7 @@ namespace rpiScope
 		{
 			this->I2Cread2buffer();
 		}
-#		if defined(DEBUG4)
-		//	function, step, extra
-		printf("\t%s\t%s\t%s\n", "I2Creadimu", "done", "");
-#		endif
+		this->IMUvalue.MadgwickAHRSupdate();
 	}
 
 	void I2Csensor::I2Cinitialize(void)
@@ -466,10 +563,10 @@ namespace rpiScope
 			//	configure acc,gyro
 			this->I2Cselect(this->i2caddress_acc);
 			this->I2Cwrite(0x22, 0b10000000);	//	REBOOT memory content
-			sleep(1);
+			usleep(125000);
 			this->I2Cread(0x22, &valNow);
 			assert(0 == (valNow &0x80));	//	REBOOT bit cleared
-			valNew = 0b00100000;	//	gyro 14.9Hz, full scale 245dps
+			valNew = 0b10001000;	//	gyro 238Hz, full scale 500dps
 			//this->I2Cread(0x10, &valNow); valNew |= (valNow &0b00011011);
 			this->I2Cwrite(0x10, valNew);
 			valNew = 0b00000000;	//	no interrupt, default output selection
@@ -482,9 +579,9 @@ namespace rpiScope
 			this->I2Cwrite(0x1E, valNew);
 			valNew = 0b10111000;	//	acc update every 4th sample, X,Y,Z enabled
 			this->I2Cwrite(0x1F, valNew);
-			valNew = 0b01011000;	//	acc 50Hz, full scale 8G
+			valNew = 0b10010000;	//	acc 238Hz, full scale 4G
 			this->I2Cwrite(0x20, valNew);
-			valNew = 0b01100000;	//	HR acc disabled, ODR/400Hz cutoff
+			valNew = 0b10100101;	//	HR acc enabled, ODR/100Hz cutoff, HPF active
 			this->I2Cwrite(0x21, valNew);
 			valNew = 0b00000100;	//	BDU disabled, auto increment register address, LITTLE ENDIAN
 			this->I2Cwrite(0x22, valNew);
@@ -501,12 +598,12 @@ namespace rpiScope
 			//	configure compass
 			this->I2Cselect(this->i2caddress_mag);
 			this->I2Cwrite(0x21, 0b00001000);	//	REBOOT memory content
-			sleep(1);
+			usleep(125000);
 			this->I2Cread(0x21, &valNow);
 			assert(0 == (valNow &0x08));	//	REBOOT bit cleared
-			valNew = 0b11010000;	//	temperature compensate, high performance X,Y, 10Hz, self test disabled
+			valNew = 0b11000100;	//	temperature compensate, high performance X,Y, 1.25Hz, self test disabled
 			this->I2Cwrite(0x20, valNew);
-			valNew = 0b00000000;	//	full scale 4gauss
+			valNew = 0b00100000;	//	full scale 8gauss
 			this->I2Cwrite(0x21, valNew);
 			valNew = 0b00000000;	//	disable low power, select continuous conversion
 			this->I2Cwrite(0x22, valNew);
@@ -771,6 +868,7 @@ namespace rpiScope
 		printf("starting sensor reading (G=%02X, A=%02X, M=%02X)\n", mother->i2caddress_gyro,mother->i2caddress_acc,mother->i2caddress_mag);
 		//	start preparation
 		int read_counter = 0;
+		int readrate = 32;
 		while(!mother->pthread_stopping)
 		{
 			if(rpiScope::I2C_NoSensor == mother->sensortype)
@@ -781,9 +879,10 @@ namespace rpiScope
 				continue;
 			}
 			//	count reading (1Hz interval for complete buffer)
-			if(0 == (read_counter++ &0x3F))
+			if(0 == (read_counter++ %readrate))
 			{
 				mother->I2Cread2buffer();
+				readrate = round(10<mother->datarate ?mother->datarate :10);	//	10Hz reading minimum
 #				if defined(DEBUG5)
 				mother->DebugDataBuffer();
 #				endif
@@ -792,7 +891,7 @@ namespace rpiScope
 			{
 				mother->I2Creadimu();
 			}
-			usleep(1000000 >>5);	//	32Hz reading
+			usleep(1000000 / readrate);	//	10Hz reading minimum
 		}
 #		if defined(DEBUG4)
 		//	function, step, extra

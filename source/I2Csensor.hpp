@@ -69,6 +69,7 @@ namespace rpiScope
 			unsigned char DataBuffer[I2C_BUFFER_MAXPAGE*I2C_BUFFER_PAGESIZE];
 			void I2Cread2buffer(void);
 			void I2Creadimu(void);
+			void IMUvalueUpdate(void);
 			IMU_MARGdata IMUvalue;
 			void pthread_I2Creading(void);
 			void pthread_stopp(void);
@@ -84,6 +85,7 @@ namespace rpiScope
 			pthread_attr_t pthread_attributes;
 			void DebugDataBuffer(void);
 			friend void *pthread_DataReading(void *data);
+			float datarate;	//	output data rate of sensors
 		private:
 	};
 	void *pthread_DataReading(void *data);

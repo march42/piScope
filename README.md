@@ -24,11 +24,15 @@ also tun, für die Endversion würde ich dann eventuell eher den Bosch BNO055 w�
 * Infos zum BNO055 von Bosch gibt es dort https://www.bosch-sensortec.com/bst/products/all_products/bno055
 * Von Bosch gibt es eine library https://github.com/BoschSensortec/BNO055_driver
 * Unter https://github.com/ChrisDick/StarPi/ gibt es ein vergleichbares Projekt
-* i2c-dev.h aus den i2c-tools werden benötigt https://github.com/groeck/i2c-tools/tree/master/include/linux
-oder Paket linux-libc-dev
+* i2c-dev.h from i2c-tools required https://github.com/groeck/i2c-tools/tree/master/include/linux
+or install package libi2c-dev
+* AHRS algorithm by Sebastian Madgwick http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
+* richards-tech RTIMULib found at https://github.com/RPi-Distro/RTIMULib
+* RTIMULib2 found at https://github.com/RTIMULib/RTIMULib2
 
 ## Status und ToDo
 * Der 9DOF liefert immer etwas sinnfreie Werte, aber schon grob mit richtiger Richtung.
-* Eine Einnordung und Kalibrierung des 9DOF habe ich noch nicht geschafft.
-* Nachdem ich mich mit der Arithmethik und Sensorfusion beschäftigte graut es mir dolle
+* ~~Eine Einnordung und Kalibrierung des 9DOF habe ich noch nicht geschafft.~~
+* ~~Nachdem ich mich mit der Arithmethik und Sensorfusion beschäftigte graut es mir dolle~~
 * Check out the Explore-Scientific PMC-Eight controller and mount
+* with RTIMULib the IMU sensor values are getting close, to usable

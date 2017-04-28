@@ -76,6 +76,7 @@ namespace rpiScope
 			void PushAcceleration(int16_t X, int16_t Y, int16_t Z);
 			void PushGyroscope(int16_t X, int16_t Y, int16_t Z);
 			void SetFullScale(double gyro, double acc, double mag);
+			void MadgwickAHRSupdate(void);
 			//	get calculated values
 			IMU_Vector* Orientation(void);
 			IMU_Vector* Fusion3D(void);
