@@ -35,8 +35,6 @@
 		<Compiler>
 			<Add option="-DUSE_MADGWICK_AHRS" />
 		</Compiler>
-		<Unit filename="../git-i2cdevlib/RaspberryPi_bcm2835/LSM9DS1/LSM9DS1.cpp" />
-		<Unit filename="../git-i2cdevlib/RaspberryPi_bcm2835/LSM9DS1/LSM9DS1.h" />
 		<Unit filename=".gitignore" />
 		<Unit filename="LICENSE" />
 		<Unit filename="MadgwickAHRS/MadgwickAHRS.c">
@@ -66,7 +64,6 @@
 		<Unit filename="source/TimeStamp.hpp" />
 		<Unit filename="source/Vector3D.cpp" />
 		<Unit filename="source/Vector3D.hpp" />
-		<Unit filename="source/i2c-dev.h" />
 		<Unit filename="source/test-programs.cpp" />
 		<Extensions>
 			<code_completion />

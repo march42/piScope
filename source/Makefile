@@ -6,7 +6,7 @@ LIBRARIES_CPP += I2Csensor.cpp IMU.cpp
 LIBRARIES_O = $(LIBRARIES_CPP:.cpp=.o)
 
 CCFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG
-#CCFLAGS += -DUSE_LINUX_I2CDEV
+CCFLAGS += -DUSE_LINUX_I2CDEV
 CCFLAGS += -DUSE_MADGWICK_AHRS
 LDFLAGS = -O3 -s -lstdc++ -pthread -lm
 
@@ -36,7 +36,6 @@ clean:
 	-$(RM) $(LIBRARIES_OBJ) $(test-i2csensor_OBJ) $(test-vector_OBJ)
 	-$(RM) test-i2csensor test-vector
 
-#-include file
 MadgwickAHRS.o: ../MadgwickAHRS/MadgwickAHRS.c
 	$(CC)  $(CCFLAGS) $(CCEXTRA) $< -c -o $@
 
