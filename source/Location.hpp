@@ -49,7 +49,6 @@ namespace piScope
 		~Location();
 
 		//	public manipulation methods
-		Location* Validate(Location* loc =NULL);
 		Location* Set(double lat, double lon, double height, const char* name =NULL);
 		const char* SetName(const char* name);
 

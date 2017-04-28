@@ -38,7 +38,7 @@ namespace piScope
 	AstroVector::AstroVector(VectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen, Location* vecLoc)
 			: Vector3D(vecType,vecX,vecY,vecZ,vecLen), LocationOffset(vecLoc), BaseOffset(NULL), TS(NULL)
 	{
-		assert(NULL != this->LocationOffset);
+		assert(NULL != this->LocationOffset);	//	Location will be at least set to 0,0,0 3DONLY in Vector3D constructor
 		if(NULL == this->TS)
 		{
 			this->TS = new AstroTime(1, this->LocationOffset);

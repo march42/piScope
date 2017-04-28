@@ -53,6 +53,132 @@ namespace piScope
 		return(this);
 	}
 
+	bool Validate(bool checkonly)
+	{
+		bool invalid = false;
+		switch(this->Type)
+		{
+		case VectorType_INVALID:
+			invalid = true;
+			#if !defined(NDEBUG)
+				std::fprintf(stderr, "debug:\t%s:\t%s\n", "Vector3D::Validate", "VectorType==INVALID");
+			#endif
+			break;
+
+		case VectorType_LATLON:
+			// check given latitude to +-90 and longitude to +-180
+			invalid |= (-90 > this->X || 90 < this->X);
+			invalid |= (-180 > this->Y || 180 < this->Y);
+			#if !defined(NDEBUG)
+				if(invalid)
+				{
+					std::fprintf(stderr, "debug:\t%s:\tinvalid LATLON %f,%f\n", "Vector3D::Validate", this->X,this->Y);
+				}
+			#endif
+			if(invalid && !checkonly)
+			{
+				this->FixLatLon();
+			}
+			break;
+
+		case VectorType_ECEF:
+			//	checking to be implemented
+		case VectorType_LocalENU:
+			//	checking to be implemented
+		case VectorType_LocalNED:
+			//	checking to be implemented
+		case VectorType_J2000:
+			//	checking to be implemented
+			#if !defined(NDEBUG)
+				std::fprintf(stderr, "debug:\t%s:\t%s\n", "Vector3D::Validate", "VectorType checking, is not implemented");
+			#endif
+
+		case VectorType_3DONLY:	//	no further checking
+		default:
+			break;
+		}
+		return(!invalid);	// negate result
+	}
+	bool FixLatLon(void)
+	{
+		if(VectorType_LATLON != this->Type)
+		{
+			return(-1);
+		}
+		double LAT = this->X;
+		double LON = this->Y;
+		if(-90 > LAT || 90 < LAT)
+		{
+			//	just remove full rotations
+			if(0 != (int fullrotation = LAT / 360))
+			{
+				//	400 will give 1, -400 => -1, -1234 => -3
+				LAT -= (360 * fullrotation);
+			}
+			//	rot<360 needs flipping on zenith crossing
+			/*	given values
+			**	0<=a<=90	-0, PRETTY
+			**	90<a<180	-90, flip lon-180
+			**	180<=a<270	-180, flip lon-180
+			**	270<a<360	-360
+			*/
+			if(90 >= this-X && -90 <= LAT)
+			{
+				//	PRETTY
+			}
+			else if(270 <= this-X)
+			{
+				LAT -= 360;
+			}
+			else if(-270 >= LAT)
+			{
+				LAT += 360;
+			}
+			else //if((90 < LAT && 270 > LAT) || (-270 < LAT && -90 > LAT))
+			{
+				//	90<x<270 needs flip -180, -90>x>-270 needs flip +180
+				//	LON flip <0 +180, >0 -180
+				LAT += (0<LAT ?-180 :+180);	//	flip LAT
+				LON += (0<LON ?-180 :+180);	//	flip LON
+			}
+
+		}
+		if(180 < LON || -180 > LON)
+		{
+			if(0 != (int fullrotation = LON / 360))
+			{
+				LON -= (360.0L * fullrotation);	// -400 => -360 = -40, PRETTY
+			}
+			/*	given values
+			**	0<=y<=180	PRETTY
+			**	180<y<360	-360
+			*/
+			if(180 < LON)
+			{
+				LON -= 360;
+			}
+			else //if(-180 > LON)
+			{
+				LON += 360;
+			}
+		}
+		//	just to be sure
+		assume(90 >= LAT && -90 <= LAT);
+		assume(180 >= LON && -180 <= LON);
+		//	store values, if changed
+		if(LAT != this->X || LON != this->Y)
+		{
+			#if !defined(NDEBUG)
+				std::fprintf(stderr, "debug:\t%s:\tfixing to %f,%f\n", "Vector3D::FixLatLon", LAT,LON);
+			#endif
+			this->X = LAT;
+			this->Y = LON;
+			return(true);	//	values have changed
+		}
+		//	nothing changed
+		return(false);
+	}
+
 	Vector3D* Vector3D::Convert2ECEF(Vector3D* convertVector)
 	{
 		Vector3D* source = (NULL==convertVector ?this :convertVector);
@@ -122,6 +248,82 @@ namespace piScope
 				, this->X,this->Y,this->Z, this->Length);
 		}
 		return(&buffer[0]);
+	}
+
+	const char* Angle_Deg2HMS(double angle, double* H=NULL, double* M=NULL, double* S=NULL)
+	{
+		static char value[30] = {'\0'};
+		size_t pos = 0;
+		value[pos] = '\0';
+		//	bring to 0<=angle<=360
+		while(0 > angle)	angle += 360;
+		while(360 < angle)	angle -= 360;
+		//	convert
+		//double hour = (angle * (24/360));
+		//double minute = ((angle * 60) % 60);
+		//double second = remainder((angle * 3600), 60);
+		double hour, minute, second;
+		minute = modf(angle, &hour);
+		second = modf((minute * 60), &minute);
+		second *= 60;
+		//	print to buffer
+		pos += std::snprintf(&value[pos], sizeof(value) -pos, "%02dH%02dM%f", (int)hour, (int)minute, second);
+		//	copy to return variables
+		/*	H,M,S	values
+		**	0,0,0	none
+		**	0,0,1	S = h*3600 + m*60 + s
+		**	0,1,0	M = h*60 + m + s/60
+		**	0,1,1	M = h*60 + m, S=s
+		**	1,0,0	H = h + m/60 + s/3600
+		**	1,0,1	H=h, S = m*60 + s
+		**	1,1,0	H=h, M = m + s/60
+		**	1,1,1	H=h, M=m, S=s
+		*/
+		if(NULL != H)
+		{
+			*H = hour + (NULL==M ?((minute + (NULL==S ?(second /60))) /60));
+		}
+		if(NULL != M)
+		{
+			*M = (NULL==H ?(hour *60)) + minute + (NULL==S ?(second /60));
+		}
+		if(NULL != S)
+		{
+			*S = (NULL==M ?((minute + (NULL==H ?(hour *60))) *60)) + second;
+		}
+		//	done
+		return(&value[0]);
+	}
+	const char* Angle_Deg2DMS(double angle, double* D=NULL, double* M=NULL, double* S=NULL)
+	{
+		static char value[30] = {'\0'};
+		size_t pos = 0;
+		value[pos] = '\0';
+		//	bring to 0<=angle<=360
+		while(0 > angle)	angle += 360;
+		while(360 < angle)	angle -= 360;
+		//	convert
+		double degree, minute, second;
+		minute = modf(angle, &degree);
+		second = modf((minute * 60), &minute);
+		second *= 60;
+		//	print to buffer
+		pos += std::snprintf(&value[pos], sizeof(value) -pos, "%02d° %02d' %f\"", (int)degree, (int)minute, second);
+		//	copy to return variables
+		if(NULL != D)
+		{
+			*D = degree + (NULL==M ?((minute + (NULL==S ?(second /60))) /60));
+		}
+		if(NULL != M)
+		{
+			*M = (NULL==D ?(degree *60)) + minute + (NULL==S ?(second /60));
+		}
+		if(NULL != S)
+		{
+			*S = (NULL==M ?((minute + (NULL==D ?(degree *60))) *60)) + second;
+		}
+		//	done
+		return(&value[0]);
 	}
 
 };

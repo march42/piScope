@@ -29,14 +29,50 @@
 namespace piScope
 {
 
-	/*	type of vector
+	/*	theory of vector
+	**
+	**	Distance can be noted in many different units. Most commonly used are meter and mile, while in astronomy pc,au,ly are used.
+	**	The parsec defined as 1 pc = 648000/pi au is the distance of sun and a star with parallax angle of 1 arcsecond.
+	**	The astronomical unit (mean distance between sun and earth) defined as 1au=149,597,870,700m
+	**	The light year (distance travelled by light in 1 year) is no standard and  mostly used by non-professionals.
+	**	just to answer the question more precisely, speed of light in vacuum 299,792,458m/s and Julian year of 365.25 days (of 86,400 seconds)
+	**	btw. Julian year is although not an international SI unit and differs from Sidereal year of 365.25636 SI-days at J2000.0 epoch.
+	**
+	**	Angles can be noted as radian (0<rho<2pi), degree (0<rho<360), gon/grad/grade/gradian (0<rho<400),
+	**	arcminute/minute/prime (0<rho< 21600'=360°*60min), arcsecond/second/double-prime (0<rho< 1296000"=360°*60m*60s),
+	**	hour-angle/right-ascension (0<rho<24h) with given minute and second are fractions of hour not arcminute and arcsecond
+	**	2pi radian = 360° = 400gon = 360*60' = 360*60*60" = 24h00m00s
+	**	astrological SIGN = 1/12th of circle
+	**	angular mil = 1/1000th of 1gon = 1mgon = 1/400000 of circle
+	**	revolution = 1 circle or full turn or cycle
+	**	quadrant = 1/4th turn denoted by roman I,II,III,IV
+	**	sextant or sextans = 1/6th turn
+	**
+	**	linear vector - expressed in equal distance units on all axis, 2D when Z axis, or mathematically either axis, zero
+	**		3DONLY where Length is used, to set base unit (Length=0 describes a rotation only axial vector)
+	**	polar vector (2D) - expressed in polar distance and angle
+	**	cylindrical vector (3D) - expressed in polar distance, angle and height
+	**	spherical vector (3D) - expressed in magnitude (distance), azimuth angle on x axis and zenith angle on z axis (in radian)
+	**		LATLON
+	**
+	**	data and used mathematics
+	**	simple Phytagoras (a^2 + b^2 = c^2)
+	**	sinus and cosinus (angles in radian)
+	**	Euler angles (z-x-z, x-y-x, y-z-y, z-y-z, x-z-x, y-x-y) - plane x,y rotates from x around z with angle alpha to N,
+	**	around N from z to Z with angle beta, around y from N to X with angle gamma
+	**	Quaternion generally represented as [a + b*i + c*j + d*k] Hamilton formula (i^2 = j^2 = k^2 = i*j*k = -1)
+	*/
+	/*	stored values for types
+	**
 	**	3DONLY defines a vector which timestamp is unneeded or not changing
+	**		X,Y,Z	distance
+	**	LATLON are geo coordinates, fixed on Earth's mean surface
+	**		X,Y in decimal degree, X = latitude (degrees North), Y = longitude (degrees East)
+	**		Z in meter, height above earth's mean radius (mean sea level)
 	**	ECEF (earth centered, earth fixed) origin at center of mass of the earth X/Y axis lying on equatorial plane
 	**		X axis from lon=180 (antipodal meridian) for negative values to lon=0 (prime meridian) for positive values
 	**		Y axis from lon=90W for negative values to lon=90E for positive values
 	**		Z axis on rotation axis of earth, negative values pointing south and positive values north
-	**	LATLON are geo coordinates, fixed on Earth's mean surface
-	**		X = latitude (degrees North), Y = longitude (degrees East), Z = heights above mean sea level
 	**	LocalENU (east, north, up) centered/fixed on a local tangent/geodetic plane, east=x, north=y, up=z
 	**	LocalNED (north, east, down) centered/fixed on a local tangent/geodetic plane, north=x', east=y', down=z'
 	**	J2000 (ECI) fixed on Earth's Mean Equator and Equinox at 12:00 Terrestrial Time on 1 January 2000
@@ -53,12 +89,8 @@ namespace piScope
 		VectorType_J2000,
 	}	VectorType_t;
 
-	//	predefine, for cross reference and friend declaration
-	class Vector4D;
-
 	class Vector3D
 	{
-		friend class Vector4D;
 	private:	/* private members are accessible only from within the same class or "friends" */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
@@ -66,15 +98,19 @@ namespace piScope
 		double X;
 		double Y;
 		double Z;
-		double Length;	//	vector length
+		double Length;	//	vector length scale factor, !=0 offset, ==0 rotation
+
+		//	internal handling methods
+		bool FixLatLon(void);	//	return true=changed
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		Vector3D(VectorType_t vecType=VectorType_3DONLY, double vecX=0.0, double vecY=0.0, double vecZ=1.0, double vecLen=0.0);
+		Vector3D(VectorType_t vecType=VectorType_3DONLY, double vecX=0.0, double vecY=0.0, double vecZ=0.0, double vecLen=0.0);
 		~Vector3D();
 
 		//	public manipulation methods
 		Vector3D* Set(VectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen);
+		bool Validate(bool checkonly =false);	// return true=valid
 
 		//	public conversion methods
 		Vector3D* Convert2ECEF(Vector3D* sdVector =NULL);
@@ -82,6 +118,10 @@ namespace piScope
 		//	public access methods
 		const char* ToString(void) const;
 	};
+
+	//	some small helpers
+	const char* Angle_Deg2HMS(double angle, double* H=NULL, double* M=NULL, double* S=NULL);
+	const char* Angle_Deg2DMS(double angle, double* D=NULL, double* M=NULL, double* S=NULL);
 
 };
 

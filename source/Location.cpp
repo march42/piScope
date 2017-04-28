@@ -44,44 +44,6 @@ namespace piScope
 		this->SetName(NULL);	//	free name buffer
 	}
 
-	Location* Location::Validate(Location* loc)
-	{
-		Location* source = (NULL==loc ?this :loc);
-		while(90.0 < source->X || -90.0 > source->X)
-		{
-			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\t%s=%f\n", "latitude", source->X);
-			#endif
-			if(90.0 < source->X)
-			{
-				source->X -= 180;
-			}
-			else if(-90.0 > source->X)
-			{
-				source->X += 180;
-			}
-			source->X *= -1;
-			source->Y *= -1;
-		}
-		while(-180.0 > source->Y)
-		{
-			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\t%s=%f\n", "longitude", source->Y);
-			#endif
-			source->Y += 360;
-		}
-		while(180.0 < source->Y)
-		{
-			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\t%s=%f\n", "longitude", source->Y);
-			#endif
-			source->Y -= 360;
-		}
-		assert(90 >= source->X && -90 <= source->X);
-		assert(180 >= source->Y && -180 <= source->Y);
-		return(source);
-	}
-
 	Location* Location::Set(double lat, double lon, double height, const char* name)
 	{
 		this->Type = VectorType_LATLON;
@@ -90,6 +52,7 @@ namespace piScope
 		this->Z = height;
 		this->Length = 1.0L;
 		this->SetName(name);
+		this->Validate();	//	just, to be sure
 		return(this);
 	}
 	const char* Location::SetName(const char* name)
@@ -127,7 +90,7 @@ namespace piScope
 	Vector3D* Location::ToVector(Location* loc) const
 	{
 		Location* source = (NULL==loc ?(Location*)this :loc);
-		return(new Vector3D(VectorType_LATLON,source->X,source->Y,source->Z,1.0));
+		return(new Vector3D(VectorType_LATLON,source->X,source->Y,source->Z,source->Length));
 	}
 
 	double Location::GetLatitude(void) const
