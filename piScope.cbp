@@ -7,9 +7,6 @@
 		<Option makefile_is_custom="1" />
 		<Option pch_mode="2" />
 		<Option compiler="gnu_gcc_compiler_for_raspberry_pi" />
-		<Compiler>
-			<Add option="-DUSE_MADGWICK_AHRS" />
-		</Compiler>
 		<Build>
 			<Target title="Debug">
 				<Option output="bin/Debug/piScope" prefix_auto="1" extension_auto="1" />
@@ -36,7 +33,7 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-Wall" />
+			<Add option="-DUSE_MADGWICK_AHRS" />
 		</Compiler>
 		<Unit filename="../git-i2cdevlib/RaspberryPi_bcm2835/LSM9DS1/LSM9DS1.cpp" />
 		<Unit filename="../git-i2cdevlib/RaspberryPi_bcm2835/LSM9DS1/LSM9DS1.h" />
@@ -62,6 +59,7 @@
 		<Unit filename="source/LogFile.hpp" />
 		<Unit filename="source/MACROS.h" />
 		<Unit filename="source/Makefile" />
+		<Unit filename="source/README.md" />
 		<Unit filename="source/Telescope.cpp" />
 		<Unit filename="source/Telescope.hpp" />
 		<Unit filename="source/TimeStamp.cpp" />
@@ -69,8 +67,7 @@
 		<Unit filename="source/Vector3D.cpp" />
 		<Unit filename="source/Vector3D.hpp" />
 		<Unit filename="source/i2c-dev.h" />
-		<Unit filename="source/test-i2csensor.cpp" />
-		<Unit filename="source/test-vector.cpp" />
+		<Unit filename="source/test-programs.cpp" />
 		<Extensions>
 			<code_completion />
 			<envvars />

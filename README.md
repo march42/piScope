@@ -36,3 +36,5 @@ or install package libi2c-dev
 * ~~Nachdem ich mich mit der Arithmethik und Sensorfusion beschäftigte graut es mir dolle~~
 * Check out the Explore-Scientific PMC-Eight controller and mount
 * with RTIMULib the IMU sensor values are getting close, to usable
+
+- [*] automated installing/building of libi2c-dev, pigpio, RTIMULib

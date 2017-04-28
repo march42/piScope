@@ -1,7 +1,7 @@
 # Makefile
 
 SUBDIRS = source stellarium--telescope_server gpio-i2c-sniffer
-source_CCEXTRA = -DUSE_OWN_I2CDEV
+source_CCEXTRA =
 stellarium--telescope_server_CCEXTRA =
 gpio-i2c-sniffer_CCEXTRA =
 
