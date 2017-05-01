@@ -39,22 +39,27 @@
 namespace piScope
 {
 
-	AstroTime::AstroTime(time_t ts, Location* loc)
+	MHAstroTime::MHAstroTime(MHAstroTime* ts)
+	{
+		this->UTC = ts->UTC;
+		this->TimeLocation = ts->TimeLocation;
+	}
+	MHAstroTime::MHAstroTime(time_t ts, MHLocation* loc)
 		//: UTC(ts), TimeLocation(loc)
 	{
 		//	use methods, so default value handling needs maintenance only once
 		this->Set(ts);
 		this->SetLocation(loc);
 	}
-	AstroTime::~AstroTime()
+	MHAstroTime::~MHAstroTime()
 	{
 	}
 
-	time_t AstroTime::Set(time_t ts)
+	time_t MHAstroTime::Set(time_t ts)
 	{
 		if(1 == ts)
 		{
-			this->UTC = std::time(NULL);
+			this->UTC = time(NULL);
 		}
 		else
 		{
@@ -63,22 +68,22 @@ namespace piScope
 		return(this->UTC);
 	}
 
-	Location* AstroTime::SetLocation(Location* loc)
+	MHLocation* MHAstroTime::SetLocation(MHLocation* loc)
 	{
 		this->TimeLocation = loc;
 		if(NULL == this->TimeLocation)
 		{
-			this->TimeLocation = new Location(0,0,0,"UNDEFINED");
+			this->TimeLocation = new MHLocation(0,0,0,"UNDEFINED");
 		}
 		return(this->TimeLocation);
 	}
-	Location* AstroTime::SetLongitude(float lon)
+	MHLocation* MHAstroTime::SetLongitude(float lon)
 	{
-		this->TimeLocation = new Location(0,lon,0,"LON only");
+		this->TimeLocation = new MHLocation(0,lon,0,"LON only");
 		return(this->TimeLocation);
 	}
 
-	time_t AstroTime::Get(int type) const
+	time_t MHAstroTime::Get(int type) const
 	{
 		//	get time stamp (-1=UTC, 0=LMST, 1=GMST, 2=JD, 3=MJD)
 		if(0 == type)
@@ -106,7 +111,7 @@ namespace piScope
 		return(this->UTC);
 	}
 
-	double AstroTime::GetAngleMST(int GMST) const
+	double MHAstroTime::GetAngleMST(int GMST) const
 	{
 		double mst;
 		//	get Mean Sidereal Time angle in seconds
@@ -116,49 +121,49 @@ namespace piScope
 		return(mst);
 	}
 
-	Location* AstroTime::GetLocation(void) const
+	MHLocation* MHAstroTime::GetLocation(void) const
 	{
 		return(this->TimeLocation);
 	}
 
-	const char* AstroTime::ToString(int type) const
+	const char* MHAstroTime::ToString(int type) const
 	{
 		//	get time stamp (-1=UTC, 0=LMST, 1=GMST, 2=JD, 3=MJD)
 		static char cval[30] = { "MIST\0" };
 		size_t pos = 0;
 		cval[pos] = '\0';
-		if(2 == type && 0 == (pos += std::snprintf(&cval[pos], sizeof(cval) -pos, "%f JD", this->GetJulianDate(false))))
+		if(2 == type && 0 == (pos += snprintf(&cval[pos], sizeof(cval) -pos, "%f JD", this->GetJulianDate(false))))
 		{
-			std::sprintf(&cval[0], "snprintf failed.");
+			snprintf(&cval[0], sizeof(cval), "snprintf failed.");
 		}
-		else if(3 == type && 0 == (pos += std::snprintf(&cval[pos], sizeof(cval) -pos, "%f JD", this->GetJulianDate(true))))
+		else if(3 == type && 0 == (pos += snprintf(&cval[pos], sizeof(cval) -pos, "%f JD", this->GetJulianDate(true))))
 		{
-			std::sprintf(&cval[0], "snprintf failed.");
+			snprintf(&cval[0], sizeof(cval), "snprintf failed.");
 		}
 		else
 		{
 			time_t tsval = this->Get(type);
-			struct tm * tmval = std::gmtime(&tsval);
+			struct tm * tmval = gmtime(&tsval);
 			assert(NULL!=tmval);
-			if(-1 == type && 0 == (pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%Y%m%dT%H%M%SZ", tmval)))
+			if(-1 == type && 0 == (pos += strftime(&cval[pos], sizeof(cval) -pos, "%Y%m%dT%H%M%SZ", tmval)))
 			{
-				std::sprintf(&cval[0], "failed:%ld", tsval);
+				snprintf(&cval[0], sizeof(cval), "failed:%ld", tsval);
 			}
-			else if(1 == type && 0 == (pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%H:%M:%S GMST", tmval)))
+			else if(1 == type && 0 == (pos += strftime(&cval[pos], sizeof(cval) -pos, "%H:%M:%S GMST", tmval)))
 			{
-				std::sprintf(&cval[0], "failed:%ld", tsval);
+				snprintf(&cval[0], sizeof(cval), "failed:%ld", tsval);
 			}
-			else if(0 == type && 0 == (pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%H:%M:%S LMST", tmval)))
+			else if(0 == type && 0 == (pos += strftime(&cval[pos], sizeof(cval) -pos, "%H:%M:%S LMST", tmval)))
 			{
-				std::sprintf(&cval[0], "failed:%ld", tsval);
+				snprintf(&cval[0], sizeof(cval), "failed:%ld", tsval);
 			}
 			else if(0 == pos)
 			{
-				pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%Y%m%dT%H%M%S ????", tmval);
+				pos += strftime(&cval[pos], sizeof(cval) -pos, "%Y%m%dT%H%M%S ????", tmval);
 			}
 		}
 		#if !defined(NDEBUG)
-		std::fprintf(stderr, "debug:\tToString: %d = %s\n", type, &cval[0]);
+			fprintf(stderr, "debug:\tToString: %d = %s\n", type, &cval[0]);
 		#endif
 		assert('\0' != cval[0]);
 		return(&cval[0]);

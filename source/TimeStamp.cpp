@@ -39,19 +39,23 @@
 namespace piScope
 {
 
-	TimeStamp::TimeStamp(time_t ts)
+	MHTimeStamp::MHTimeStamp(MHTimeStamp* ts)
+	{
+		this->UTC = ts->UTC;
+	}
+	MHTimeStamp::MHTimeStamp(time_t ts)
 	{
 		this->Set(ts);
 	}
-	TimeStamp::~TimeStamp()
+	MHTimeStamp::~MHTimeStamp()
 	{
 	}
 
-	time_t TimeStamp::Set(time_t ts)
+	time_t MHTimeStamp::Set(time_t ts)
 	{
 		if(1 == ts)
 		{
-			this->UTC = std::time(NULL);
+			this->UTC = time(NULL);
 		}
 		else
 		{
@@ -60,27 +64,32 @@ namespace piScope
 		return(this->UTC);
 	}
 
-	time_t TimeStamp::Get(void) const
+	time_t MHTimeStamp::Get(void) const
 	{
 		return(this->UTC);
 	}
-	double TimeStamp::GetJulianDate(int modified) const
+	time_t MHTimeStamp::GetElapsed(time_t ts) const
+	{
+		time_t since = (1==ts ?time(NULL) :ts);
+		return(this->UTC - since);
+	}
+	double MHTimeStamp::GetJulianDate(int modified) const
 	{
 		double JD = (modified ?TIME_UTC2MJD(this->UTC) :TIME_UTC2JD(this->UTC));
 		return(JD);
 	}
 
-	const char* TimeStamp::ToString(void) const
+	const char* MHTimeStamp::ToString(void) const
 	{
 		//	get time stamp string
 		static char cval[30] = { "\0" };
 		size_t pos = 0;
 		cval[pos] = '\0';
-		struct tm * tmval = std::gmtime(&this->UTC);
+		struct tm * tmval = gmtime(&this->UTC);
 		assert(NULL != tmval);
-		if(0 == (pos += std::strftime(&cval[pos], sizeof(cval) -pos, "%Y%m%dT%H%M%SZ", tmval)))
+		if(0 == (pos += strftime(&cval[pos], sizeof(cval) -pos, "%Y%m%dT%H%M%SZ", tmval)))
 		{
-			std::sprintf(&cval[0], "failed:%ld", this->UTC);
+			snprintf(&cval[0],sizeof(cval), "failed:%ld", this->UTC);
 		}
 		assert('\0' != cval[0]);
 		return(&cval[0]);

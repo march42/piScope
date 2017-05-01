@@ -46,24 +46,27 @@ namespace piScope
 	**		X axis aligned with mean equinox, Y axis 90° east on celestial equator, Z axis aligned with celestial pole
 	*/
 
-	class AstroVector : public Vector3D
+	class MHAstroVector : public MHVector3D
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
-		Location* LocationOffset;	//	positional offset, must always remain LATLON
-		Vector3D* BaseOffset;	//	base offset, may be len=0 just to indicate rotation
-		AstroTime* TS;	//	time stamp of vector
+		MHLocation* LocationOffset;	//	positional offset, must always remain LATLON
+		MHVector3D* BaseOffset;	//	base offset, may be len=0 just to indicate rotation
+		MHAstroTime* TS;	//	time stamp of vector
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		AstroVector(VectorType_t vecType=VectorType_3DONLY, double vecX=0.0, double vecY=0.0, double vecZ=1.0, double vecLen=1.0, Location* vecLoc=NULL);
-		~AstroVector();
+		MHAstroVector(MHAstroVector* vec);
+		MHAstroVector(MHVectorType_t vecType=VectorType_3DONLY, double vecX=0.0, double vecY=0.0, double vecZ=1.0
+			, double vecLen=1.0, MHLocation* vecLoc=NULL);
+		~MHAstroVector();
 
 		//	public manipulation methods
-		Location* SetLocation(double latX, double lonY, double heightZ);
-		Vector3D* SetBase(double vecX, double vecY, double vecZ, double vecLen);
-		AstroTime* SetTime(time_t ts =1);
+		MHLocation* SetLocation(MHLocation* loc =NULL);
+		MHLocation* SetLocation(double latX, double lonY, double heightZ);
+		MHVector3D* SetBase(double vecX, double vecY, double vecZ, double vecLen);
+		MHAstroTime* SetTime(time_t ts =1);
 
 		//	public access methods
 		const char* ToString(void) const;

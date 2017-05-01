@@ -30,7 +30,7 @@
 namespace piScope
 {
 
-	class LogFile
+	class MHLogFile
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
 		//	logging
@@ -45,9 +45,9 @@ namespace piScope
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		LogFile();
-		LogFile(const char* file, int level, const char* name);
-		~LogFile();
+		MHLogFile();
+		MHLogFile(const char* file, int level, const char* name);
+		~MHLogFile();
 
 		//	configuration methods
 		FILE* SetLogFile(const char* file=NULL);

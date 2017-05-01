@@ -38,14 +38,14 @@
 namespace piScope
 {
 
-	LogFile::LogFile()
+	MHLogFile::MHLogFile()
 	{
 		//	prepare log
 		this->LOGFILE = NULL;
 		this->SetLogLevel(3);
 		this->SetLogName(NULL);
 	}
-	LogFile::LogFile(const char* file, int level, const char* name)
+	MHLogFile::MHLogFile(const char* file, int level, const char* name)
 	{
 		//	prepare log
 		this->LOGFILE = NULL;
@@ -53,36 +53,36 @@ namespace piScope
 		this->SetLogName(name);
 		this->SetLogFile(file);
 	}
-	LogFile::~LogFile()
+	MHLogFile::~MHLogFile()
 	{
 		if(NULL != this->LOGFILE)
 		{
-			std::fclose(this->LOGFILE);
+			fclose(this->LOGFILE);
 			this->LOGFILE = NULL;
 		}
 	}
 
 	/*	getting a useful timestamp
 	*/
-	const char* LogFile::TimeStampUTC(void) const
+	const char* MHLogFile::TimeStampUTC(void) const
 	{
 		time_t ts; time(&ts);
 		static char value[20];
-		std::strftime(&value[0],sizeof(value), "%04Y%02m%02d.%02H%02M%02S %Z", gmtime(&ts));
+		strftime(&value[0],sizeof(value), "%04Y%02m%02d.%02H%02M%02S %Z", gmtime(&ts));
 		return(&value[0]);
 	}
-	const char* LogFile::TimeStamp(void) const
+	const char* MHLogFile::TimeStamp(void) const
 	{
 		struct timespec ts;
 		::clock_gettime(CLOCK_MONOTONIC, &ts);
 		static char value[20];
-		std::sprintf(&value[0], "%04d.%06d", (int)ts.tv_sec,(int)(ts.tv_nsec /1000));
+		snprintf(&value[0],sizeof(value), "%04d.%06d", (int)ts.tv_sec,(int)(ts.tv_nsec /1000));
 		return(&value[0]);
 	}
 
-	FILE* LogFile::SetLogFile(const char* file)
+	FILE* MHLogFile::SetLogFile(const char* file)
 	{
-		this->LOGFILE = std::fopen((NULL==file ?"logfile.txt" :file),"a");
+		this->LOGFILE = fopen((NULL==file ?"logfile.txt" :file),"a");
 		return(this->LOGFILE);
 	}
 
@@ -93,26 +93,26 @@ namespace piScope
 	**	2 = INFO
 	**	3 = (default)
 	*/
-	int LogFile::SetLogLevel(int level)
+	int MHLogFile::SetLogLevel(int level)
 	{
 		this->LOGLEVEL = level;
 		return(this->LOGLEVEL);
 	}
 
-	const char* LogFile::SetLogName(const char* name)
+	const char* MHLogFile::SetLogName(const char* name)
 	{
 		if(NULL == name)
 		{
-			std::memset(&this->NAME[0], '\0', sizeof(this->NAME));
+			memset(&this->NAME[0], '\0', sizeof(this->NAME));
 		}
 		else
 		{
-			std::strncpy(&this->NAME[0], name, sizeof(this->NAME));
+			strncpy(&this->NAME[0], name, sizeof(this->NAME));
 		}
 		return(&this->NAME[0]);
 	}
 
-	int LogFile::printLog(int level, const char * format, ... ) const
+	int MHLogFile::printLog(int level, const char * format, ... ) const
 	{
 		int written = 0;
 		if(level <= this->LOGLEVEL)

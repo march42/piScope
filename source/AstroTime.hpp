@@ -32,27 +32,28 @@
 namespace piScope
 {
 
-	class AstroTime : public TimeStamp
+	class MHAstroTime : public MHTimeStamp
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
-		Location* TimeLocation;
+		MHLocation* TimeLocation;
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		AstroTime(time_t ts =1, Location* loc =NULL);	//	ts==1 flag, to get current time
-		~AstroTime();
+		MHAstroTime(MHAstroTime* ts);
+		MHAstroTime(time_t ts =1, MHLocation* loc =NULL);	//	ts==1 flag, to get current time
+		~MHAstroTime();
 
 		//	public access methods
 		time_t Set(time_t ts =1);
-		Location* SetLocation(Location* loc =NULL);
-		Location* SetLongitude(float lon =0.0);
+		MHLocation* SetLocation(MHLocation* loc =NULL);
+		MHLocation* SetLongitude(float lon =0.0);
 
 		//	public access methods
 		time_t Get(int type =-1) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST)
 		double GetAngleMST(int GMST=true) const;
-		Location* GetLocation(void) const;
+		MHLocation* GetLocation(void) const;
 		const char* ToString(int type =-1) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST)
 	};
 

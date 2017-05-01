@@ -5,10 +5,15 @@ LIBRARIES_CPP += LogFile.cpp Telescope.cpp
 LIBRARIES_CPP += I2Csensor.cpp IMU.cpp
 LIBRARIES_O = $(LIBRARIES_CPP:.cpp=.o)
 
+TESTPROGRAMS = test_i2csensor test_vector test_rtimulib
+
 CCFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG
 CCFLAGS += -DUSE_LINUX_I2CDEV
 CCFLAGS += -DUSE_MADGWICK_AHRS
 LDFLAGS = -O3 -s -lstdc++ -pthread -lm
+
+CCFLAGS += -DUSE_RTIMULIB
+LDFLAGS += -lRTIMULib
 
 ifeq ($(OS),Windows_NT)
 	RM = del /Q /F
@@ -27,9 +32,12 @@ endif
 .cpp.o .cpp.obj:
 	$(CC) $(CCFLAGS) $(CCEXTRA) $< -c -o $@
 
+.o .obj:
+	$(CC) $(LDFLAGS) $(LDEXTRA) $< $(LIBRARIES_O) -o $@
+
 all: $(LIBRARIES_O) test
 
-test: test_i2csensor test_vector
+test: $(TESTPROGRAMS)
 
 clean:
 	-$(RM) $(LIBRARIES_O) $(test-i2csensor_O) $(test-vector_O)
@@ -39,6 +47,6 @@ clean:
 MadgwickAHRS.o: ../MadgwickAHRS/MadgwickAHRS.c
 	$(CC)  $(CCFLAGS) $(CCEXTRA) $< -c -o $@
 
-test_i2csensor test_vector: test-programs.cpp $(LIBRARIES_O)
+$(TESTPROGRAMS): test-programs.cpp $(LIBRARIES_O)
 	$(CC) $(CCFLAGS) $(CCEXTRA) -D __$(shell echo $@ | tr '[:lower:]' '[:upper:]')__ $< -c -o $@.o
 	$(CC) $(LDFLAGS) $(LDEXTRA) $@.o $(LIBRARIES_O) -o $@

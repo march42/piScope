@@ -31,7 +31,7 @@
 namespace piScope
 {
 
-	class Location : public Vector3D
+	class MHLocation : public MHVector3D
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
 		char* Name;
@@ -45,19 +45,21 @@ namespace piScope
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		Location(double lat =0.0, double lon =0.0, double height =0.0, const char* name =NULL);
-		~Location();
+		MHLocation(MHLocation* loc);
+		MHLocation(double lat =0.0, double lon =0.0, double height =0.0, const char* name =NULL);
+		~MHLocation();
 
 		//	public manipulation methods
-		Location* Set(double lat, double lon, double height, const char* name =NULL);
+		MHLocation* Set(double lat, double lon, double height, const char* name =NULL);
 		const char* SetName(const char* name);
 
 		//	public access methods
-		const char* ToString(Location* loc =NULL) const;
-		Vector3D* ToVector(Location* loc =NULL) const;
+		const char* ToString(MHLocation* loc =NULL) const;
+		MHVector3D* ToVector(MHLocation* loc =NULL) const;
 		double GetLatitude(void) const;
 		double GetLongitude(void) const;
 		double GetHeight(void) const;
+		const char* GetName(const char* NULLRETURN="UNNAMED") const;
 	};
 
 };

@@ -33,7 +33,9 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-DUSE_LINUX_I2CDEV" />
 			<Add option="-DUSE_MADGWICK_AHRS" />
+			<Add option="-DUSE_RTIMULIB" />
 		</Compiler>
 		<Unit filename=".gitignore" />
 		<Unit filename="LICENSE" />

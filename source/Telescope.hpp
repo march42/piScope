@@ -25,25 +25,75 @@
 #	define _TELESCOPE_HPP_
 
 #	include "LogFile.hpp"
+#	include "TimeStamp.hpp"
 #	include "AstroTime.hpp"
+#	include "Vector3D.hpp"
 #	include "AstroVector.hpp"
+#	include "Location.hpp"
 
 #	include <unistd.h>
+#	include <pthread.h>
+
+#	if defined(USE_RTIMULIB)
+#		include <RTIMULib.h>
+#	endif
 
 namespace piScope
 {
 
-	class Telescope
-		: public LogFile
+	class MHTelescope
+		: public MHLogFile
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
+		char* Name;
+		MHLocation* Location;
+		MHAstroVector* Orientation;
+
+	/*	RTIMULib members, for inertial measurement sensors
+	**	ImuSetting
+	**	ImuSensor
+	**	ImuData
+	*/
+#	if defined(USE_RTIMULIB)
+		RTIMUSettings* ImuSetting;
+		RTIMU* ImuSensor;
+		RTIMU_DATA ImuData;
+		//	threading for RTIMULib
+		bool IMUpthread_stopping;
+		bool IMUpthread_running;
+		pthread_t IMUpthread;
+		pthread_attr_t IMUpthread_attributes;
+		friend void *IMUpthread_Polling(void *data);
+#	endif
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		Telescope();
-		~Telescope();
+		MHTelescope(const char* name="telescope");
+		~MHTelescope();
+
+		//	access methods
+		const char* GetName(const char* NULLRETURN="UNNAMED") const;
+		const char* ToString(void) const;
+		MHAstroVector* GetOrientation(void);
+
+		//	preparation and manipulation methods
+		const char* SetName(const char* name);
+		MHLocation* SetLocation(double latitude, double longitude, double height=0, const char* name=NULL);
+
+	/*	RTIMULib members, for inertial measurement sensors
+	**	InitIMUSensor
+	**	PollIMUSensor
+	*/
+#	if defined(USE_RTIMULIB)
+		bool InitIMUSensor(void);
+		bool PollIMUSensor(void);
+		bool ImuNotMoving(void);
+		void IMUpthread_start(void);
+		void IMUpthread_stopp(void);
+#	endif
+
 	};
 
 };

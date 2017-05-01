@@ -24,26 +24,34 @@
 #include "Vector3D.hpp"
 #include "MACROS.h"
 
+//#include <unistd.h>
 #include <cassert>
 #include <cstdio>
 //#include <cstdlib>
 //#include <cstring>
-//#include <unistd.h>
 #include <cmath>
 //#include <climits>
 
 namespace piScope
 {
 
-	Vector3D::Vector3D(VectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen)
+	MHVector3D::MHVector3D(MHVectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen)
 			: Type(vecType), X(vecX), Y(vecY), Z(vecZ), Length(vecLen)
 	{
 	}
-	Vector3D::~Vector3D()
+	MHVector3D::MHVector3D(MHVector3D* vec)
+	{
+		this->Type = vec->Type;
+		this->X = vec->X;
+		this->Y = vec->Y;
+		this->Z = vec->Z;
+		this->Length = vec->Length;
+	}
+	MHVector3D::~MHVector3D()
 	{
 	}
 
-	Vector3D* Vector3D::Set(VectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen)
+	MHVector3D* MHVector3D::Set(MHVectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen)
 	{
 		this->Type = vecType;
 		this->X = vecX;
@@ -53,7 +61,7 @@ namespace piScope
 		return(this);
 	}
 
-	bool Vector3D::Validate(bool checkonly)
+	bool MHVector3D::Validate(bool checkonly)
 	{
 		bool invalid = false;
 		switch(this->Type)
@@ -61,7 +69,7 @@ namespace piScope
 		case VectorType_INVALID:
 			invalid = true;
 			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\t%s:\t%s\n", "Vector3D::Validate", "VectorType==INVALID");
+				fprintf(stderr, "debug:\t%s:\t%s\n", "Vector3D::Validate", "VectorType==INVALID");
 			#endif
 			break;
 
@@ -72,7 +80,7 @@ namespace piScope
 			#if !defined(NDEBUG)
 				if(invalid)
 				{
-					std::fprintf(stderr, "debug:\t%s:\tinvalid LATLON %f,%f\n", "Vector3D::Validate", this->X,this->Y);
+					fprintf(stderr, "debug:\t%s:\tinvalid LATLON %f,%f\n", "Vector3D::Validate", this->X,this->Y);
 				}
 			#endif
 			if(invalid && !checkonly)
@@ -90,7 +98,7 @@ namespace piScope
 		case VectorType_J2000:
 			//	checking to be implemented
 			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\t%s:\t%s\n", "Vector3D::Validate", "VectorType checking, is not implemented");
+				fprintf(stderr, "debug:\t%s:\t%s\n", "Vector3D::Validate", "VectorType checking, is not implemented");
 			#endif
 
 		case VectorType_3DONLY:	//	no further checking
@@ -99,7 +107,7 @@ namespace piScope
 		}
 		return(!invalid);	// negate result
 	}
-	bool Vector3D::FixLatLon(double* lat, double* lon)
+	bool MHVector3D::FixLatLon(double* lat, double* lon)
 	{
 		if(NULL == lat && NULL == lon && VectorType_LATLON != this->Type)
 		{
@@ -170,7 +178,7 @@ namespace piScope
 		if((NULL == lat && NULL == lon) && (LAT != this->X || LON != this->Y))
 		{
 			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\t%s:\tfixing to %f,%f\n", "Vector3D::FixLatLon", LAT,LON);
+				fprintf(stderr, "debug:\t%s:\tfixing to %f,%f\n", "Vector3D::FixLatLon", LAT,LON);
 			#endif
 			this->X = LAT;
 			this->Y = LON;
@@ -191,10 +199,10 @@ namespace piScope
 		return(false);
 	}
 
-	Vector3D* Vector3D::Convert2ECEF(Vector3D* convertVector)
+	MHVector3D* MHVector3D::Convert2ECEF(MHVector3D* convertVector)
 	{
-		Vector3D* source = (NULL==convertVector ?this :convertVector);
-		Vector3D* destination = (NULL==convertVector ?(new Vector3D) :convertVector);
+		MHVector3D* source = (NULL==convertVector ?this :convertVector);
+		MHVector3D* destination = (NULL==convertVector ?(new MHVector3D) :convertVector);
 		//	convert to ECEF
 		if(VectorType_LATLON == source->Type)
 		{
@@ -203,16 +211,16 @@ namespace piScope
 			//	ECEF-r' = cos(latitude)
 			//	ECEF-X = r' * cos(longitude)
 			//	ECEF-Y = r' * sin(longitude)
-			double latlonX = std::cos(DEG2RAD(source->X)) * std::cos(DEG2RAD(source->Y));
-			double latlonY = std::cos(DEG2RAD(source->X)) * std::sin(DEG2RAD(source->Y));
-			double latlonZ = std::sin(DEG2RAD(source->X));
+			double latlonX = cos(DEG2RAD(source->X)) * cos(DEG2RAD(source->Y));
+			double latlonY = cos(DEG2RAD(source->X)) * sin(DEG2RAD(source->Y));
+			double latlonZ = sin(DEG2RAD(source->X));
 			#if !defined(NDEBUG)
-				std::fprintf(stderr, "debug:\tconverting LATLON=[%f,%f,%f] to ECEF=[%f,%f,%f]\n"
+				fprintf(stderr, "debug:\tconverting LATLON=[%f,%f,%f] to ECEF=[%f,%f,%f]\n"
 					, source->X, source->Y, source->Z
 					, latlonX, latlonY, latlonZ);
-				std::fprintf(stderr, "debug:\tsin(lat)=%f, cos(lat)=%f, sin(lon)=%f, cos(lon)=%f\n"
-					, std::sin(DEG2RAD(source->X)), std::cos(DEG2RAD(source->X))
-					, std::sin(DEG2RAD(source->Y)), std::cos(DEG2RAD(source->Y)));
+				fprintf(stderr, "debug:\tsin(lat)=%f, cos(lat)=%f, sin(lon)=%f, cos(lon)=%f\n"
+					, sin(DEG2RAD(source->X)), cos(DEG2RAD(source->X))
+					, sin(DEG2RAD(source->Y)), cos(DEG2RAD(source->Y)));
 			#endif
 			//	prepare destination vector
 			destination->Length = LATLON_EARTHMR + source->Z;
@@ -245,7 +253,7 @@ namespace piScope
 		return(destination);
 	}
 
-	const char* Vector3D::ToString(void) const
+	const char* MHVector3D::ToString(void) const
 	{
 		static char buffer[50] = {'\0'};
 		const char* type[] = { "3D","ECEF","LATLON","Local ENU","Local NED","J2000" };
@@ -254,7 +262,7 @@ namespace piScope
 			//	clean values
 			double lat = this->X, latD,latM,latS;
 			double lon = this->Y, lonD,lonM,lonS;
-			((Vector3D*)this)->FixLatLon(&lat,&lon);
+			((MHVector3D*)this)->FixLatLon(&lat,&lon);
 			//	convert
 			latM = modf(lat, &latD);
 			latS = modf((latM * 60), &latM);
@@ -263,19 +271,19 @@ namespace piScope
 			lonS = modf((lonM * 60), &lonM);
 			lonS *= 60;
 			//	print to buffer
-			std::snprintf(&buffer[0], sizeof(buffer), "%s [%02d%s%02d\'%f\",%02d%s%02d\'%f\",%fm]", type[this->Type]
+			snprintf(&buffer[0], sizeof(buffer), "%s [%02d%s%02d\'%f\",%02d%s%02d\'%f\",%fm]", type[this->Type]
 				, (0>latD ?-1 :1) * (int)latD, (0>latD ?"S" :"N"), (int)latM, latS
 				, (0>lonD ?-1 :1) * (int)lonD, (0>lonD ?"W" :"E"), (int)lonM, lonS
 				, this->Z);
 		}
 		else if(0 > this->Type || (char)sizeof(type) <= this->Type)
 		{
-			std::snprintf(&buffer[0],sizeof(buffer), "INVALID [%f,%f,%f] l=%f"
+			snprintf(&buffer[0],sizeof(buffer), "INVALID [%f,%f,%f] l=%f"
 				, this->X,this->Y,this->Z, this->Length);
 		}
 		else
 		{
-			std::snprintf(&buffer[0],sizeof(buffer), "%s [%f,%f,%f] l=%f", type[this->Type]
+			snprintf(&buffer[0],sizeof(buffer), "%s [%f,%f,%f] l=%f", type[this->Type]
 				, this->X,this->Y,this->Z, this->Length);
 		}
 		return(&buffer[0]);
@@ -298,7 +306,7 @@ namespace piScope
 		second = modf((minute * 60), &minute);
 		second *= 60;
 		//	print to buffer
-		pos += std::snprintf(&value[pos], sizeof(value) -pos, "%02dH%02dM%f", (int)hour, (int)minute, second);
+		pos += snprintf(&value[pos], sizeof(value) -pos, "%02dH%02dM%f", (int)hour, (int)minute, second);
 		//	copy to return variables
 		/*	H,M,S	values
 		**	0,0,0	none
@@ -343,7 +351,7 @@ namespace piScope
 		second = modf((minute * 60), &minute);
 		second *= 60;
 		//	print to buffer
-		pos += std::snprintf(&value[pos], sizeof(value) -pos, "%02d° %02d' %f\"", (int)degree, (int)minute, second);
+		pos += snprintf(&value[pos], sizeof(value) -pos, "%02d° %02d' %f\"", (int)degree, (int)minute, second);
 		//	copy to return variables
 		if(NULL != D)
 		{

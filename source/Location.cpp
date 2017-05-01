@@ -33,18 +33,33 @@
 namespace piScope
 {
 
-	Location::Location(double lat, double lon, double height, const char* name)
-		: Vector3D(VectorType_LATLON, lat, lon, height, 1.0), Name(NULL)
+	MHLocation::MHLocation(MHLocation* loc)
+		: MHVector3D((MHVector3D*)loc)
+	{
+		if(NULL != loc->Name)
+		{
+			this->Name = new char[strlen(loc->Name) +1];
+			strcpy(this->Name, loc->Name);
+		}
+		//	call Vector3D copy
+		assert(this->Type == loc->Type);
+		assert(this->X == loc->X);
+		assert(this->Y == loc->Y);
+		assert(this->Z == loc->Z);
+		assert(this->Length == loc->Length);
+	}
+	MHLocation::MHLocation(double lat, double lon, double height, const char* name)
+		: MHVector3D(VectorType_LATLON, lat, lon, height, 1.0), Name(NULL)
 	{
 		this->SetName(name);	//	set name, if given
 		this->Validate();
 	}
-	Location::~Location()
+	MHLocation::~MHLocation()
 	{
 		this->SetName(NULL);	//	free name buffer
 	}
 
-	Location* Location::Set(double lat, double lon, double height, const char* name)
+	MHLocation* MHLocation::Set(double lat, double lon, double height, const char* name)
 	{
 		this->Type = VectorType_LATLON;
 		this->X = lat;
@@ -55,45 +70,50 @@ namespace piScope
 		this->Validate();	//	just, to be sure
 		return(this);
 	}
-	const char* Location::SetName(const char* name)
+	const char* MHLocation::SetName(const char* name)
 	{
-		if(NULL != this->Name)
+		/*if(NULL != this->Name)
 		{
 			delete(this->Name);
 			this->Name = NULL;
-		}
+		}*/
+		this->Name = NULL;
 		if(NULL != name)
 		{
-			this->Name = new char[std::strlen(name) +1];
+			this->Name = new char[strlen(name) +1];
 			*(this->Name) = '\0';
-			std::strcpy(this->Name, name);
+			strcpy(this->Name, name);
 		}
 		return(this->Name);
 	}
 
-	const char* Location::ToString(Location* loc) const
+	const char* MHLocation::ToString(MHLocation* loc) const
 	{
-		Location* source = (NULL==loc ?(Location*)this :loc);
-		return(source->Vector3D::ToString());
+		MHLocation* source = (NULL==loc ?(MHLocation*)this :loc);
+		return(source->MHVector3D::ToString());
 	}
 
-	Vector3D* Location::ToVector(Location* loc) const
+	MHVector3D* MHLocation::ToVector(MHLocation* loc) const
 	{
-		Location* source = (NULL==loc ?(Location*)this :loc);
-		return(new Vector3D(VectorType_LATLON,source->X,source->Y,source->Z,source->Length));
+		MHLocation* source = (NULL==loc ?(MHLocation*)this :loc);
+		return(new MHVector3D(VectorType_LATLON,source->X,source->Y,source->Z,source->Length));
 	}
 
-	double Location::GetLatitude(void) const
+	double MHLocation::GetLatitude(void) const
 	{
 		return(this->X);
 	}
-	double Location::GetLongitude(void) const
+	double MHLocation::GetLongitude(void) const
 	{
 		return(this->Y);
 	}
-	double Location::GetHeight(void) const
+	double MHLocation::GetHeight(void) const
 	{
 		return(this->Z);
+	}
+	const char* MHLocation::GetName(const char* NULLRETURN) const
+	{
+		return(NULL==this->Name ?NULLRETURN :this->Name);
 	}
 
 };

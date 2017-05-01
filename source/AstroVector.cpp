@@ -35,20 +35,52 @@
 namespace piScope
 {
 
-	AstroVector::AstroVector(VectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen, Location* vecLoc)
-			: Vector3D(vecType,vecX,vecY,vecZ,vecLen), LocationOffset(vecLoc), BaseOffset(NULL), TS(NULL)
+	MHAstroVector::MHAstroVector(MHAstroVector* vec)
+		: LocationOffset(NULL), BaseOffset(NULL), TS(NULL)
 	{
+		this->Type = vec->Type;
+		this->X = vec->X;
+		this->Y = vec->Y;
+		this->Z = vec->Z;
+		this->Length = vec->Length;
+#		if defined(TRACE)
+		fprintf(stderr, "DEBUG:\tvec=%p, loc=%p, base=%p, ts=%p\n", vec,vec->LocationOffset,vec->BaseOffset,vec->TS);
+#		endif
+		if(NULL != vec->LocationOffset)
+		{
+			this->LocationOffset = new MHLocation(vec->LocationOffset);
+		}
+		if(NULL != vec->BaseOffset)
+		{
+			this->BaseOffset = new MHVector3D(vec->BaseOffset);
+		}
+		if(NULL != vec->TS)
+		{
+			this->TS = new MHAstroTime(vec->TS);
+		}
+	}
+	MHAstroVector::MHAstroVector(MHVectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen, MHLocation* vecLoc)
+			: MHVector3D(vecType,vecX,vecY,vecZ,vecLen), LocationOffset(vecLoc), BaseOffset(NULL), TS(NULL)
+	{
+		if(NULL == this->LocationOffset)
+		{
+			this->LocationOffset = new MHLocation(0,0,0,"UNSET");
+		}
 		assert(NULL != this->LocationOffset);	//	Location will be at least set to 0,0,0 3DONLY in Vector3D constructor
 		if(NULL == this->TS)
 		{
-			this->TS = new AstroTime(1, this->LocationOffset);
+			this->TS = new MHAstroTime(1, this->LocationOffset);
 		}
 	}
-	AstroVector::~AstroVector()
+	MHAstroVector::~MHAstroVector()
 	{
 	}
 
-	Location* AstroVector::SetLocation(double latX, double lonY, double heightZ)
+	MHLocation* MHAstroVector::SetLocation(MHLocation* loc)
+	{
+		return(this->LocationOffset = new MHLocation(loc));
+	}
+	MHLocation* MHAstroVector::SetLocation(double latX, double lonY, double heightZ)
 	{
 		if(NULL != this->LocationOffset)
 		{
@@ -56,12 +88,12 @@ namespace piScope
 		}
 		else
 		{
-			this->LocationOffset = new Location(latX,lonY,heightZ);
+			this->LocationOffset = new MHLocation(latX,lonY,heightZ);
 		}
 		return(this->LocationOffset);
 	}
 
-	Vector3D* AstroVector::SetBase(double vecX, double vecY, double vecZ, double vecLen)
+	MHVector3D* MHAstroVector::SetBase(double vecX, double vecY, double vecZ, double vecLen)
 	{
 		if(NULL != this->BaseOffset)
 		{
@@ -69,12 +101,12 @@ namespace piScope
 		}
 		else
 		{
-			this->BaseOffset = new Vector3D(VectorType_3DONLY,vecX,vecY,vecZ,vecLen);
+			this->BaseOffset = new MHVector3D(VectorType_3DONLY,vecX,vecY,vecZ,vecLen);
 		}
 		return(this->BaseOffset);
 	}
 
-	AstroTime* AstroVector::SetTime(time_t ts)
+	MHAstroTime* MHAstroVector::SetTime(time_t ts)
 	{
 		if(NULL != this->TS)
 		{
@@ -82,14 +114,14 @@ namespace piScope
 		}
 		else
 		{
-			this->TS = new AstroTime(ts,this->LocationOffset);
+			this->TS = new MHAstroTime(ts,this->LocationOffset);
 		}
 		return(this->TS);
 	}
 
-	const char* AstroVector::ToString(void) const
+	const char* MHAstroVector::ToString(void) const
 	{
-		return(Vector3D::ToString());
+		return(MHVector3D::ToString());
 	}
 
 };

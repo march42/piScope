@@ -87,14 +87,14 @@ namespace piScope
 		VectorType_LocalENU,
 		VectorType_LocalNED,
 		VectorType_J2000,
-	}	VectorType_t;
+	}	MHVectorType_t;
 
-	class Vector3D
+	class MHVector3D
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
-		VectorType_t Type;
+		MHVectorType_t Type;
 		double X;
 		double Y;
 		double Z;
@@ -105,15 +105,16 @@ namespace piScope
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		Vector3D(VectorType_t vecType=VectorType_3DONLY, double vecX=0.0, double vecY=0.0, double vecZ=0.0, double vecLen=0.0);
-		~Vector3D();
+		MHVector3D(MHVectorType_t vecType=VectorType_3DONLY, double vecX=0.0, double vecY=0.0, double vecZ=0.0, double vecLen=0.0);
+		MHVector3D(MHVector3D* vec);
+		~MHVector3D();
 
 		//	public manipulation methods
-		Vector3D* Set(VectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen);
+		MHVector3D* Set(MHVectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen);
 		bool Validate(bool checkonly =false);	// return true=valid
 
 		//	public conversion methods
-		Vector3D* Convert2ECEF(Vector3D* sdVector =NULL);
+		MHVector3D* Convert2ECEF(MHVector3D* sdVector =NULL);
 
 		//	public access methods
 		const char* ToString(void) const;

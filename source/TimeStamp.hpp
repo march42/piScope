@@ -29,7 +29,7 @@
 namespace piScope
 {
 
-	class TimeStamp
+	class MHTimeStamp
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
 
@@ -38,14 +38,16 @@ namespace piScope
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		TimeStamp(time_t ts =1);	//	==1 flag, to get current time
-		~TimeStamp();
+		MHTimeStamp(MHTimeStamp* ts);
+		MHTimeStamp(time_t ts =1);	//	==1 flag, to get current time
+		~MHTimeStamp();
 
-		//	public access methods
+		//	public manipulation methods
 		time_t Set(time_t ts =1);
 
 		//	public access methods
 		time_t Get(void) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST, 2=JD, 3=MJD)
+		time_t GetElapsed(time_t ts =1) const;	//	get elapsed time since time stamp
 		double GetJulianDate(int modified =false) const;	//	get Julian Date on prime meridian (0=JD, 1=MJD)
 		const char* ToString(void) const;	//	get time stamp (-1=UTC, 0=LMST, 1=GMST, 2=JD, 3=MJD)
 	};
