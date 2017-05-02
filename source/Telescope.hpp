@@ -33,6 +33,7 @@
 
 #	include <unistd.h>
 #	include <pthread.h>
+#	include <deque>
 
 #	if defined(USE_RTIMULIB)
 #		include <RTIMULib.h>
@@ -49,7 +50,8 @@ namespace piScope
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
 		char* Name;
 		MHLocation* Location;
-		MHAstroVector* Orientation;
+		//MHAstroVector* Orientation;
+		std::deque<MHAstroVector*> Orientation;
 
 	/*	RTIMULib members, for inertial measurement sensors
 	**	ImuSetting

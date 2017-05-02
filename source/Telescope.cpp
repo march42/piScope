@@ -46,7 +46,7 @@ namespace piScope
 {
 
 	MHTelescope::MHTelescope(const char* name)
-		: Name(NULL), Location(NULL), Orientation(NULL)
+		: Name(NULL), Location(NULL)
 #	if defined(USE_RTIMULIB)
 		, ImuSetting(NULL), ImuSensor(NULL), IMUpthread_stopping(true), IMUpthread_running(false), IMUpthread(0)
 #	endif
@@ -57,7 +57,7 @@ namespace piScope
 		this->IMUpthread = pthread_self();	//	consider self==invalid for any sub thread
 		//	create variable buffers
 		this->Location = new MHLocation();
-		this->Orientation = new MHAstroVector(VectorType_3DONLY, 0.0,0.0,0.0, 0.0, this->Location);
+		//this->Orientation = new MHAstroVector(VectorType_3DONLY, 0.0,0.0,0.0, 0.0, this->Location);
 	}
 	MHTelescope::~MHTelescope()
 	{
@@ -91,14 +91,39 @@ namespace piScope
 
 	MHAstroVector* MHTelescope::GetOrientation(void)
 	{
-#		if defined(TRACE)
-		fprintf(stderr, "DEBUG:\tthis=%p\n", this);
-#		endif
-		//MHAstroVector* vec = new MHAstroVector(this->Orientation);
-		MHAstroVector* vec = this->Orientation;
-#		if defined(TRACE)
-		fprintf(stderr, "DEBUG:\tvec=%p\n", vec);
-#		endif
+		//	limit queue to 1000 values
+		while(1000 < this->Orientation.size())
+		{
+			this->Orientation.pop_front();
+		}
+		MHAstroVector* vec = new MHAstroVector(this->Orientation.back());
+		//	remove all values older than 300 seconds or differ more than 3 percent
+		this->printLog(9,"last orientation:\t%s\n", vec->ToString());
+		while(1 < this->Orientation.size() && (300 < this->Orientation.front()->GetElapsed()
+			|| 0.03 < abs(this->Orientation.front()->GetOffsetX(vec->GetX()))
+			|| 0.03 < abs(this->Orientation.front()->GetOffsetY(vec->GetY()))
+			|| 0.03 < abs(this->Orientation.front()->GetOffsetZ(vec->GetZ()))))
+		{
+			this->printLog(9,"remove orientation:\t%s\n", this->Orientation.front()->ToString());
+			this->Orientation.pop_front();
+		}
+		//	calculate average
+		double px = 0, py = 0, pz = 0;
+		if(1 < this->Orientation.size())
+		{
+			size_t pos;
+			for(pos=0; pos < this->Orientation.size(); ++pos)
+			{
+				px += this->Orientation.at(pos)->GetX();
+				py += this->Orientation.at(pos)->GetY();
+				pz += this->Orientation.at(pos)->GetZ();
+			}
+			px /= pos;
+			py /= pos;
+			pz /= pos;
+			this->printLog(9,"averaging orientation:\t%d %f,%f,%f\n", pos, px,py,pz);
+			vec->Set(px, py, pz, 0);
+		}
 		return(vec);
 	}
 
@@ -203,13 +228,11 @@ namespace piScope
 			}
 			this->ImuData = this->ImuSensor->getIMUData();
 			//	new data
-			if(NULL == this->Orientation)
+			/*if(NULL != this->Orientation && this->ImuNotMoving() && this->ImuData.accelValid)*/
 			{
-				this->Orientation = new MHAstroVector;
-			}
-			if(NULL != this->Orientation && this->ImuNotMoving() && this->ImuData.accelValid)
-			{
-				this->Orientation->Set(VectorType_LocalNED, this->ImuData.accel.x(),this->ImuData.accel.y(),this->ImuData.accel.z(), 0);
+				MHAstroVector* ori = new MHAstroVector(VectorType_LocalNED, this->ImuSensor->getMeasuredPose().x()
+					, this->ImuSensor->getMeasuredPose().y(), this->ImuSensor->getMeasuredPose().z(), 0);
+				//this->Orientation->Set(VectorType_LocalNED, this->ImuData.accel.x(),this->ImuData.accel.y(),this->ImuData.accel.z(), 0);
 				#if defined(DONT_OPTIMIZE_TIMESTAMP)
 				//	this->ImuData.timestamp = RTMath::currentUSecsSinceEpoch()
 				struct timeval tvnow;
@@ -217,10 +240,11 @@ namespace piScope
 				time_t tstamp = time(NULL);
 				tvnow.tv_sec -= this->ImuData.timestamp / 1000000;	//	get offset
 				tstamp -= tvnow.tv_sec;
-				this->Orientation->SetTime(tstamp);
+				ori->SetTime(tstamp);
 				#else
-				this->Orientation->SetTime(this->ImuData.timestamp /1000000);
+				ori->SetTime(this->ImuData.timestamp /1000000);
 				#endif
+				this->Orientation.push_back(ori);
 			}
 		}
 		else
