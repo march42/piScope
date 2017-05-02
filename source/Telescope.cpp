@@ -97,12 +97,12 @@ namespace piScope
 			this->Orientation.pop_front();
 		}
 		MHAstroVector* vec = new MHAstroVector(this->Orientation.back());
-		//	remove all values older than 300 seconds or differ more than 3 percent
+		//	remove all values older than 300 seconds or differ more than 1 percent
 		this->printLog(9,"last orientation:\t%s\n", vec->ToString());
 		while(1 < this->Orientation.size() && (300 < this->Orientation.front()->GetElapsed()
-			|| 0.03 < abs(this->Orientation.front()->GetOffsetX(vec->GetX()))
-			|| 0.03 < abs(this->Orientation.front()->GetOffsetY(vec->GetY()))
-			|| 0.03 < abs(this->Orientation.front()->GetOffsetZ(vec->GetZ()))))
+			|| 0.01 < abs(this->Orientation.front()->GetOffsetX(vec->GetX()))
+			|| 0.01 < abs(this->Orientation.front()->GetOffsetY(vec->GetY()))
+			|| 0.01 < abs(this->Orientation.front()->GetOffsetZ(vec->GetZ()))))
 		{
 			this->printLog(9,"remove orientation:\t%s\n", this->Orientation.front()->ToString());
 			this->Orientation.pop_front();
@@ -125,6 +125,24 @@ namespace piScope
 			vec->Set(px, py, pz, 0);
 		}
 		return(vec);
+	}
+	bool MHTelescope::GetOrientation(double* RA, double* DEC)
+	{
+		if(NULL == RA || NULL == DEC || 0 == this->Orientation.size())
+		{
+			return(false);
+		}
+		//	get orientation
+		MHAstroVector* vec = this->GetOrientation();
+		if(NULL == vec || VectorType_INVALID == vec->GetType())
+		{
+			return(false);
+		}
+		//	convert:	local hour angle = local sidereal time - right ascension
+		*RA = vec->GetLocalSiderealAngle();
+		*DEC = 0.0;
+		//	return
+		return(true);
 	}
 
 	const char* MHTelescope::SetName(const char* name)
@@ -266,7 +284,7 @@ namespace piScope
 		MHAstroTime tsimu(this->ImuData.timestamp, this->Position);
 		tsValid = 100 > tsimu.GetElapsed();
 		#endif
-		return(tsValid && this->ImuData.gyroValid && 0.01 > (this->ImuData.gyro.x() + this->ImuData.gyro.y() + this->ImuData.gyro.z()));
+		return(tsValid && this->ImuData.gyroValid && 0.1 > (this->ImuData.gyro.x() + this->ImuData.gyro.y() + this->ImuData.gyro.z()));
 	}
 
 	void *IMUpthread_Polling(void *data)

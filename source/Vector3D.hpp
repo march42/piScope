@@ -125,6 +125,7 @@ namespace piScope
 		double GetOffsetY(double value) const;
 		double GetZ(void) const;
 		double GetOffsetZ(double value) const;
+		MHVectorType_t GetType(void) const;
 	};
 
 	//	some small helpers

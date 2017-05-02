@@ -71,6 +71,7 @@ namespace piScope
 		//	public access methods
 		const char* ToString(void) const;
 		time_t GetElapsed(time_t ts =1) const;
+		double GetLocalSiderealAngle(void) const;
 	};
 
 };

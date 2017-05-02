@@ -129,4 +129,34 @@ namespace piScope
 		return(this->TS->GetElapsed(ts));
 	}
 
+	double MHAstroVector::GetLocalSiderealAngle(void) const
+	{
+		assert(NULL != this->LocationOffset);
+		/*if(NULL == this->LocationOffset)
+		{
+			this->LocationOffset = new MHLocation(0,0,0,"UNSET");
+		}*/
+		assert(NULL != this->TS);
+		/*if(NULL == this->TS)
+		{
+			this->TS = new MHAstroTime(1, this->LocationOffset);
+		}*/
+		assert(NULL != this->TS->GetLocation());
+		/*if(NULL == this->TS->GetLocation())
+		{
+			this->TS->SetLocation(this->LocationOffset);
+		}*/
+		//	calculate hour angle
+		double angle = this->TS->GetAngleMST() - RAD2DEG(this->Z);
+		while(360 < angle)
+		{
+			angle -= 360;
+		}
+		while(0 > angle)
+		{
+			angle += 360;
+		}
+		return(angle);	//	angle from Local Mean Sidereal Time
+	}
+
 };

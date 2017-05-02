@@ -50,7 +50,6 @@ namespace piScope
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
 		char* Name;
 		MHLocation* Location;
-		//MHAstroVector* Orientation;
 		std::deque<MHAstroVector*> Orientation;
 
 	/*	RTIMULib members, for inertial measurement sensors
@@ -79,6 +78,7 @@ namespace piScope
 		const char* GetName(const char* NULLRETURN="UNNAMED") const;
 		const char* ToString(void) const;
 		MHAstroVector* GetOrientation(void);
+		bool GetOrientation(double* RA, double* DEC);
 
 		//	preparation and manipulation methods
 		const char* SetName(const char* name);

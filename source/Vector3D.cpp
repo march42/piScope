@@ -271,7 +271,7 @@ namespace piScope
 	{
 		static char buffer[50] = {'\0'};
 		const char* type[] = { "3D","ECEF","LATLON","Local ENU","Local NED","J2000" };
-		if(VectorType_LATLON > this->Type)
+		if(VectorType_LATLON == this->Type)
 		{
 			//	clean values
 			double lat = this->X, latD,latM,latS;
@@ -289,6 +289,14 @@ namespace piScope
 				, (0>latD ?-1 :1) * (int)latD, (0>latD ?"S" :"N"), (int)latM, latS
 				, (0>lonD ?-1 :1) * (int)lonD, (0>lonD ?"W" :"E"), (int)lonM, lonS
 				, this->Z);
+		}
+		else if(VectorType_LocalNED == this->Type)
+		{
+			double roll = RAD2DEG(this->X);
+			double pitch = RAD2DEG(this->Y);
+			double yaw = RAD2DEG(this->Z);
+			//	print to buffer
+			snprintf(&buffer[0], sizeof(buffer), "%s [%f,%f,%f]", type[this->Type], roll,pitch,yaw);
 		}
 		else if(0 > this->Type || (char)sizeof(type) <= this->Type)
 		{
@@ -326,6 +334,10 @@ namespace piScope
 	double MHVector3D::GetOffsetZ(double value) const
 	{
 		return((this->Z - value) / value);
+	}
+	MHVectorType_t MHVector3D::GetType(void) const
+	{
+		return(this->Type);
 	}
 
 	const char* Angle_Deg2HMS(double angle, double* H, double* M, double* S)
