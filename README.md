@@ -31,10 +31,9 @@ or install package libi2c-dev
 * RTIMULib2 found at https://github.com/RTIMULib/RTIMULib2
 
 ## Status und ToDo
-* Der 9DOF liefert immer etwas sinnfreie Werte, aber schon grob mit richtiger Richtung.
-* ~~Eine Einnordung und Kalibrierung des 9DOF habe ich noch nicht geschafft.~~
-* ~~Nachdem ich mich mit der Arithmethik und Sensorfusion beschäftigte graut es mir dolle~~
-* Check out the Explore-Scientific PMC-Eight controller and mount
-* with RTIMULib the IMU sensor values are getting close, to usable
-
-- [*] automated installing/building of libi2c-dev, pigpio, RTIMULib
+- Der 9DOF liefert immer etwas sinnfreie Werte, aber schon grob mit richtiger Richtung.
+- ~~Eine Einnordung und Kalibrierung des 9DOF habe ich noch nicht geschafft.~~
+- ~~Nachdem ich mich mit der Arithmethik und Sensorfusion beschäftigte graut es mir dolle~~
+- Check out the Explore-Scientific PMC-Eight controller and mount
+- with RTIMULib the IMU sensor values are getting close, to usable
+- automated installing/building of libi2c-dev, pigpio, RTIMULib
