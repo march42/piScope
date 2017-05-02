@@ -45,7 +45,7 @@ namespace piScope
 		MHAstroTime(time_t ts =1, MHLocation* loc =NULL);	//	ts==1 flag, to get current time
 		~MHAstroTime();
 
-		//	public access methods
+		//	public manipulation methods
 		time_t Set(time_t ts =1);
 		MHLocation* SetLocation(MHLocation* loc =NULL);
 		MHLocation* SetLongitude(float lon =0.0);
