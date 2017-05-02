@@ -7,7 +7,7 @@
 **
 **	This program is free software; you can redistribute it and/or modify
 **	it under the terms of the GNU General Public License as published by
-**	the Free Software Foundation; either version 2 of the License, or
+**	the Free Software Foundation; either version 3 of the License, or
 **	(at your option) any later version.
 **
 **	This program is distributed in the hope that it will be useful,
@@ -97,11 +97,17 @@ namespace piScope
 			}
 			break;
 
-		case VectorType_ECEF:
-			//	checking to be implemented
 		case VectorType_LocalENU:
-			//	checking to be implemented
 		case VectorType_LocalNED:
+			//	rotation only, so length==0
+			invalid |= (0 != this->Length);
+			if(invalid && !checkonly)
+			{
+				this->Length = 0.0;
+			}
+			break;
+
+		case VectorType_ECEF:
 			//	checking to be implemented
 		case VectorType_J2000:
 			//	checking to be implemented
