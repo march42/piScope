@@ -61,7 +61,7 @@ linux-i2c-dev-h.built: FORCE
 
 RTIMULib.built: FORCE
 	[ -d RTIMULib ] || git clone https://github.com/RPi-Distro/RTIMULib.git
-	(mkdir RTIMULib.build; cd RTIMULib.build; cmake -D BUILD_DRIVE=OFF -D BUILD_DRIVE10=OFF -D BUILD_DRIVE11=OFF -D CMAKE_INSTALL_PREFIX=/usr ../RTIMULib/Linux/)
+	(mkdir RTIMULib.build; cd RTIMULib.build; cmake -D CMAKE_INSTALL_PREFIX=/usr ../RTIMULib/Linux/)
 	$(MAKE) -C RTIMULib.build RTIMULib RTIMULibCal
 	sudo $(MAKE) -C RTIMULib.build install/strip
 	sudo ldconfig
