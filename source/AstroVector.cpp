@@ -124,4 +124,9 @@ namespace piScope
 		return(MHVector3D::ToString());
 	}
 
+	time_t MHAstroVector::GetElapsed(time_t ts) const
+	{
+		return(this->TS->GetElapsed(ts));
+	}
+
 };

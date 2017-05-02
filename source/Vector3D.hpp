@@ -111,6 +111,7 @@ namespace piScope
 
 		//	public manipulation methods
 		MHVector3D* Set(MHVectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen);
+		MHVector3D* Set(double vecX, double vecY, double vecZ, double vecLen);
 		bool Validate(bool checkonly =false);	// return true=valid
 
 		//	public conversion methods
@@ -118,6 +119,12 @@ namespace piScope
 
 		//	public access methods
 		const char* ToString(void) const;
+		double GetX(void) const;
+		double GetOffsetX(double value) const;
+		double GetY(void) const;
+		double GetOffsetY(double value) const;
+		double GetZ(void) const;
+		double GetOffsetZ(double value) const;
 	};
 
 	//	some small helpers

@@ -60,6 +60,14 @@ namespace piScope
 		this->Length = vecLen;
 		return(this);
 	}
+	MHVector3D* MHVector3D::Set(double vecX, double vecY, double vecZ, double vecLen)
+	{
+		this->X = vecX;
+		this->Y = vecY;
+		this->Z = vecZ;
+		this->Length = vecLen;
+		return(this);
+	}
 
 	bool MHVector3D::Validate(bool checkonly)
 	{
@@ -287,6 +295,31 @@ namespace piScope
 				, this->X,this->Y,this->Z, this->Length);
 		}
 		return(&buffer[0]);
+	}
+
+	double MHVector3D::GetX(void) const
+	{
+		return(this->X);
+	}
+	double MHVector3D::GetOffsetX(double value) const
+	{
+		return((this->X - value) / value);
+	}
+	double MHVector3D::GetY(void) const
+	{
+		return(this->Y);
+	}
+	double MHVector3D::GetOffsetY(double value) const
+	{
+		return((this->Y - value) / value);
+	}
+	double MHVector3D::GetZ(void) const
+	{
+		return(this->Z);
+	}
+	double MHVector3D::GetOffsetZ(double value) const
+	{
+		return((this->Z - value) / value);
 	}
 
 	const char* Angle_Deg2HMS(double angle, double* H, double* M, double* S)

@@ -176,7 +176,7 @@ int main(int argc, char* argv[], char* envp[])
 
 #	elif defined(__TEST_RTIMULIB__)
 	piScope::MHTelescope scope("myScope");
-	scope.SetLogLevel(9);
+	scope.SetLogLevel(6);
 	scope.SetLocation( TESTLOCATION );
 	fprintf(stdout, "Telescope:\t%s\n", scope.ToString());
 
