@@ -14,6 +14,8 @@
 - [ ] remove old, now unneeded, code
 - [x] rename all classes and prefix with MH not to be mixed up with variable names
 - [x] option USE_RTIMULIB for building with RTIMULib
-- [ ] get orientation from IMU sensor
+- [x] get orientation from IMU sensor
 - [ ] add vector math to class MHVector3D
-- [ ] add statistical locking to orientation (the more data the more precision
+- [x] add statistical locking to orientation (the more data the more precision
+- [ ] correct angles - most probably misinterpretation of radian and degree
+- [ ] dont rely on RTIMULib-calculatedPose use own trigonometric

@@ -99,6 +99,7 @@ namespace piScope
 
 		case VectorType_LocalENU:
 		case VectorType_LocalNED:
+		case VectorType_LocalRPY:
 			//	rotation only, so length==0
 			invalid |= (0 != this->Length);
 			if(invalid && !checkonly)
@@ -270,7 +271,7 @@ namespace piScope
 	const char* MHVector3D::ToString(void) const
 	{
 		static char buffer[50] = {'\0'};
-		const char* type[] = { "3D","ECEF","LATLON","Local ENU","Local NED","J2000" };
+		const char* type[] = { "3D","ECEF","LATLON","Local ENU","Local NED","Local RPY","J2000" };
 		if(VectorType_LATLON == this->Type)
 		{
 			//	clean values

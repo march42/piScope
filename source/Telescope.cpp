@@ -21,6 +21,7 @@
 **	MA 02110-1301 USA.
 */
 
+#include "MACROS.h"
 #include "Telescope.hpp"
 
 //#include <cstdio>
@@ -140,7 +141,8 @@ namespace piScope
 		}
 		//	convert:	local hour angle = local sidereal time - right ascension
 		*RA = vec->GetLocalSiderealAngle();
-		*DEC = 0.0;
+		double rad = asin (vec->GetX() / (sqrt(pow(vec->GetX(),2) + pow(vec->GetY(),2) + pow(vec->GetZ(),2))));
+		*DEC = RAD2DEG(rad);
 		//	return
 		return(true);
 	}
@@ -246,11 +248,37 @@ namespace piScope
 			}
 			this->ImuData = this->ImuSensor->getIMUData();
 			//	new data
-			/*if(NULL != this->Orientation && this->ImuNotMoving() && this->ImuData.accelValid)*/
+			if(this->ImuData.accelValid && this->ImuData.compassValid)
 			{
-				MHAstroVector* ori = new MHAstroVector(VectorType_LocalNED, this->ImuSensor->getMeasuredPose().x()
-					, this->ImuSensor->getMeasuredPose().y(), this->ImuSensor->getMeasuredPose().z(), 0);
-				//this->Orientation->Set(VectorType_LocalNED, this->ImuData.accel.x(),this->ImuData.accel.y(),this->ImuData.accel.z(), 0);
+				RTVector3 accel = this->ImuData.accel;
+				accel.normalize();	//	x+y+z=1
+				RTVector3 compass = this->ImuData.compass;
+				compass.normalize();	//	x+y+z=1
+				//	calculate angle
+				/*	tri axis tilt sensing
+				**	alpha = arcsin( ax1 / g )
+				**	beta  = arcsin( ay1 / g )
+				**	gamma = arccos( az1 / g )
+				*/
+				/*	tri axis trigonometric
+				**	alpha=pitch = arctan( ax1 / sqrt( ay1^2 + az1^2 ) )	// -pi<atan2(y,x)<+pi
+				**	beta=roll   = arctan( ay1 / sqrt( ax1^2 + az1^2 ) )
+				*/
+				double ALPHA = asin(accel.x() / sqrt((accel.x()*accel.x()) + (accel.y()*accel.y()) + (accel.z()*accel.z())));	// -1<a<+1
+				double BETA = asin(accel.y() / sqrt((accel.x()*accel.x()) + (accel.y()*accel.y()) + (accel.z()*accel.z())));	// -1<a<+1
+				//double GAMMA = acos(accel.z() / sqrt((accel.x()*accel.x()) + (accel.y()*accel.y()) + (accel.z()*accel.z())));	// -1<a<+1
+				//	calculate RA and limit angle value to 2*PI (360 degree)
+				double RA = atan2(-1 * compass.y(), (compass.x() * accel.z()) + (compass.z() * accel.x()));	// -PI<RA<+PI
+				while(2 * M_PI < RA)
+				{
+					RA -= (2 * M_PI);
+				}
+				while(0 > RA)
+				{
+					RA += (2 * M_PI);
+				}
+				//	create vector and push to queue
+				MHAstroVector* ori = new MHAstroVector(VectorType_LocalRPY, ALPHA, BETA, RA, 0);
 				#if defined(DONT_OPTIMIZE_TIMESTAMP)
 				//	this->ImuData.timestamp = RTMath::currentUSecsSinceEpoch()
 				struct timeval tvnow;

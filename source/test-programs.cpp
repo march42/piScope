@@ -184,9 +184,9 @@ int main(int argc, char* argv[], char* envp[])
 	scope.IMUpthread_start();
 	while(keep_running)
 	{
+		piScope::MHAstroVector* ori = scope.GetOrientation();
 		double RA,DEC;
 		scope.GetOrientation(&RA, &DEC);
-		piScope::MHAstroVector* ori = scope.GetOrientation();
 		if(NULL != ori && ori->Validate())
 		{
 			scope.printLog(3,"IMU:\torientation %s [%f,%f]\n", ori->ToString(), RA, DEC);
