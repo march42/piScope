@@ -98,9 +98,10 @@ namespace piScope
 			this->Orientation.pop_front();
 		}
 		MHAstroVector* vec = new MHAstroVector(this->Orientation.back());
-		//	remove all values older than 300 seconds or differ more than 1 percent
 		this->printLog(9,"last orientation:\t%s\n", vec->ToString());
-		while(1 < this->Orientation.size() && (300 < this->Orientation.front()->GetElapsed()
+		//	remove all values older than 300 seconds or differ more than 1 percent
+		//	leave a minimum of 100 values in queue
+		while(100 < this->Orientation.size() && (300 < this->Orientation.front()->GetElapsed()
 			|| 0.01 < abs(this->Orientation.front()->GetOffsetX(vec->GetX()))
 			|| 0.01 < abs(this->Orientation.front()->GetOffsetY(vec->GetY()))
 			|| 0.01 < abs(this->Orientation.front()->GetOffsetZ(vec->GetZ()))))
@@ -158,10 +159,10 @@ namespace piScope
 		{
 			delete(this->Name);
 		}*/
+		//	always prepare log to same name
+		this->SetLogName(value);
 		//	thread safe switch to name buffer
 		this->Name = value;
-		//	always prepare log to same name
-		this->SetLogName(this->Name);
 		return(this->Name);
 	}
 
@@ -333,8 +334,7 @@ namespace piScope
 				{
 					int interval = mother->ImuSensor->IMUGetPollInterval();	//	poll interval in ms
 					read_rate = (500 < interval ?2 :(1000 / interval));	// 2Hz minimum polling rate
-					//	1 second interval
-					mother->printLog(9,"IMU:\tgyro%s=[%f,%f,%f]\tacc%s=[%f,%f,%f]\tmag%s=[%f,%f,%f]\n"
+					mother->printLog(8,"IMU:\t%dHz\tgyro%s=[%f,%f,%f]\tacc%s=[%f,%f,%f]\tmag%s=[%f,%f,%f]\n", read_rate
 						, (mother->ImuData.gyroValid ?"" :"!"), mother->ImuData.gyro.x(),mother->ImuData.gyro.y(),mother->ImuData.gyro.z()
 						, (mother->ImuData.accelValid ?"" :"!"), mother->ImuData.accel.x(),mother->ImuData.accel.y(),mother->ImuData.accel.z()
 						, (mother->ImuData.compassValid ?"" :"!"), mother->ImuData.compass.x(),mother->ImuData.compass.y(),mother->ImuData.compass.z());

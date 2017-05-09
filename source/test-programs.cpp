@@ -183,7 +183,21 @@ int main(int argc, char* argv[], char* envp[])
 
 #	elif defined(__TEST_RTIMULIB__)
 	piScope::MHTelescope scope("myScope");
-	scope.SetLogLevel(6);
+	int loglevel = 6;
+	const char* logfile = "myScope.log";
+	for(int pos = 1; argc > pos; ++pos)
+	{
+		if(0 == strncmp(argv[pos],"--debug=",8))
+		{
+			sscanf(argv[pos] +8, "%d", &loglevel);
+		}
+		else if(0 == strncmp(argv[pos],"--logfile=",10))
+		{
+			logfile = (argv[pos] +10);
+		}
+	}
+	scope.SetLogLevel(loglevel);
+	scope.SetLogFile(logfile);
 	scope.SetLocation( TESTLOCATION );
 	fprintf(stdout, "Telescope:\t%s\n", scope.ToString());
 
