@@ -21,6 +21,13 @@
 **	MA 02110-1301 USA.
 */
 
+/*!	\brief	class MHLocation
+ *
+ *	Declaration of class, members and methods.
+ *	Special vector data definition and calculation methods for location data.
+ *	Specializes Vector3D for Latitude, Longitude and Height.
+ */
+
 #ifndef _LOCATION_HPP_
 #	define _LOCATION_HPP_
 
@@ -34,7 +41,7 @@ namespace piScope
 	class MHLocation : public MHVector3D
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
-		char* Name;
+		char* Name;	/*!< Name of Location */
 		/*
 		double& Latitude = X;	//	degrees north, -90=south, 0=equator, +90=north
 		double& Longitude = Y;	//	degrees east, -90=west, 0=greenwich, +90=east, -180/+180=opposite greenwich
@@ -45,21 +52,21 @@ namespace piScope
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		MHLocation(MHLocation* loc);
-		MHLocation(double lat =0.0, double lon =0.0, double height =0.0, const char* name =NULL);
-		~MHLocation();
+		MHLocation(MHLocation* loc);	/*!< constructor */
+		MHLocation(double lat =0.0, double lon =0.0, double height =0.0, const char* name =NULL);	/*!< constructor */
+		~MHLocation();	/*!< destructor */
 
 		//	public manipulation methods
-		MHLocation* Set(double lat, double lon, double height, const char* name =NULL);
-		const char* SetName(const char* name);
+		MHLocation* Set(double lat, double lon, double height, const char* name =NULL);	/*!< set new location */
+		const char* SetName(const char* name);	/*!< set new location name */
 
 		//	public access methods
-		const char* ToString(MHLocation* loc =NULL) const;
-		MHVector3D* ToVector(MHLocation* loc =NULL) const;
-		double GetLatitude(void) const;
-		double GetLongitude(void) const;
-		double GetHeight(void) const;
-		const char* GetName(const char* NULLRETURN="UNNAMED") const;
+		const char* ToString(MHLocation* loc =NULL) const;	/*!< get simple output string */
+		MHVector3D* ToVector(MHLocation* loc =NULL) const;	/*!< get Vector3D from Location */
+		double GetLatitude(void) const;	/*!< get locations latitude */
+		double GetLongitude(void) const;	/*!< get locations longitude */
+		double GetHeight(void) const;	/*!< get locations height above mean sea level */
+		const char* GetName(const char* NULLRETURN="UNNAMED") const;	/*!< get locations Name */
 	};
 
 };

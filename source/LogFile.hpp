@@ -21,6 +21,12 @@
 **	MA 02110-1301 USA.
 */
 
+/*!	\brief	class MHLogFile
+ *
+ *	Declaration of class, members and methods.
+ *	Adds simple methods for log file handling.
+ */
+
 #ifndef _LOGFILE_HPP_
 #	define _LOGFILE_HPP_
 
@@ -34,27 +40,27 @@ namespace piScope
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
 		//	logging
-		char NAME[128];
-		FILE* LOGFILE;
-		int LOGLEVEL;
+		char NAME[128];	/*!< NAME to use for log file output clarification */
+		FILE* LOGFILE;	/*!< the log file handle */
+		int LOGLEVEL;	/*!< the current highest level to filter output to log file */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
 		//	internal methods
-		const char* TimeStampUTC(void) const;
-		const char* TimeStamp(void) const;
+		const char* TimeStampUTC(void) const;	/*!< get current time stamp in UTC */
+		const char* TimeStamp(void) const;	/*!< get current time stamp in local time */
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		MHLogFile();
-		MHLogFile(const char* file, int level, const char* name);
-		~MHLogFile();
+		MHLogFile();	/*!< constructor */
+		MHLogFile(const char* file, int level, const char* name);	/*!< constructor with filename, output level and clarification name */
+		~MHLogFile();	/*!< destructor */
 
 		//	configuration methods
-		FILE* SetLogFile(const char* file=NULL);
-		int SetLogLevel(int level);
-		const char* SetLogName(const char* name);
+		FILE* SetLogFile(const char* file=NULL);	/*!< set new log file */
+		int SetLogLevel(int level);	/*!< set new filter level */
+		const char* SetLogName(const char* name);	/*!< set new clarification name */
 		//	output methods
-		int printLog(int level, const char * format, ... ) const;
+		int printLog(int level, const char * format, ... ) const;	/*!< special printf function for log file */
 	};
 
 };

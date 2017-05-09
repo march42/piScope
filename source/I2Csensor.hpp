@@ -2,6 +2,30 @@
  *	handling of 9DOF sensors using I2C bus
  *	reading absolute data from gyroscope,accelerometer,geomagnetic
  *	reading/calculating orientation and converting to J2000
+**
+**	piScope project https://github.com/march42/piScope
+**	(C) Copyright 2017 by Marc Hefter
+**
+**	This program is free software; you can redistribute it and/or modify
+**	it under the terms of the GNU General Public License as published by
+**	the Free Software Foundation; either version 3 of the License, or
+**	(at your option) any later version.
+**
+**	This program is distributed in the hope that it will be useful,
+**	but WITHOUT ANY WARRANTY; without even the implied warranty of
+**	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+**	GNU General Public License for more details.
+**
+**	You should have received a copy of the GNU General Public License
+**	along with this program; if not, write to the Free Software
+**	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+**	MA 02110-1301 USA.
+ */
+
+/*!	\brief	class I2Cdevice, class I2Csensor
+ *
+ *	Declaration of class, members and methods.
+ *	I2C communication data and methods, for handling of IMU sensor.
  */
 
 #ifndef _I2CSENSOR_HPP_
