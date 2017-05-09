@@ -23,6 +23,13 @@
 **	MA 02110-1301 USA.
 */
 
+/*!	\brief	combined source of test programs
+ *
+ *	__TEST_I2CSENSOR__
+ *	__TEST_VECTOR__
+ *	__TEST_RTIMULIB__
+ */
+
 #if defined(__TEST_I2CSENSOR__)
 #	include "I2Csensor.hpp"
 #	include "IMU.hpp"
