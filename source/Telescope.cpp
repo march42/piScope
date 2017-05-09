@@ -241,6 +241,7 @@ namespace piScope
 		}
 		else if(this->ImuSensor->IMURead())
 		{
+			//	successfully read
 			if(!this->IMUpthread_running)
 			{
 				//	no output, if threaded reading
@@ -291,18 +292,19 @@ namespace piScope
 				ori->SetTime(this->ImuData.timestamp /1000000);
 				#endif
 				this->Orientation.push_back(ori);
+				return(true);	//	successfully polled IMU sensor
 			}
 		}
 		else
 		{
+			//	no new data, or reading failed
 			if(!this->IMUpthread_running)
 			{
 				//	no output, if threaded reading
 				this->printLog(2,"PollIMUSensor:\t%s\n", "error reading or no new data");
 			}
-			return(false);
 		}
-		return(true);
+		return(false);	//	polling failed, no new data or accel/compass not valid
 	}
 
 	bool MHTelescope::ImuNotMoving(void)
@@ -312,6 +314,7 @@ namespace piScope
 		MHAstroTime tsimu(this->ImuData.timestamp, this->Position);
 		tsValid = 100 > tsimu.GetElapsed();
 		#endif
+		//	not moving, if x+y+z below 0.1 radians per second
 		return(tsValid && this->ImuData.gyroValid && 0.1 > (this->ImuData.gyro.x() + this->ImuData.gyro.y() + this->ImuData.gyro.z()));
 	}
 
@@ -336,7 +339,11 @@ namespace piScope
 						, (mother->ImuData.accelValid ?"" :"!"), mother->ImuData.accel.x(),mother->ImuData.accel.y(),mother->ImuData.accel.z()
 						, (mother->ImuData.compassValid ?"" :"!"), mother->ImuData.compass.x(),mother->ImuData.compass.y(),mother->ImuData.compass.z());
 				}
-				usleep(1000000 / read_rate);	//	100Hz polling
+				usleep(1000000 / read_rate);	//	calculate micro seconds from polling rate
+			}
+			else
+			{
+				usleep(1000);	//	poll rate of 1kHz, if polling fails
 			}
 		}
 		mother->IMUpthread_running = false;
