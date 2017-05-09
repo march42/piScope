@@ -21,6 +21,11 @@
 **	MA 02110-1301 USA.
 */
 
+/*!	\brief	class MHTelescope
+ *
+ *	Declaration of class, members and methods.
+ */
+
 #ifndef _TELESCOPE_HPP_
 #	define _TELESCOPE_HPP_
 
@@ -48,9 +53,9 @@ namespace piScope
 	private:	/* private members are accessible only from within the same class or "friends" */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
-		char* Name;
-		MHLocation* Location;
-		std::deque<MHAstroVector*> Orientation;
+		char* Name;	/*!< Name of the telescope */
+		MHLocation* Location;	/*!< Location of the telescope */
+		std::deque<MHAstroVector*> Orientation;	/*!< Orientation of the telescope, deque for statistical precision */
 
 	/*	RTIMULib members, for inertial measurement sensors
 	**	ImuSetting
@@ -58,42 +63,42 @@ namespace piScope
 	**	ImuData
 	*/
 #	if defined(USE_RTIMULIB)
-		RTIMUSettings* ImuSetting;
-		RTIMU* ImuSensor;
-		RTIMU_DATA ImuData;
+		RTIMUSettings* ImuSetting;	/*!< setting of RTIMULib IMU sensor*/
+		RTIMU* ImuSensor;	/*!< access to RTIMULib IMU sensor */
+		RTIMU_DATA ImuData;	/*!< current data of RTIMULib IMU sensor */
 		//	threading for RTIMULib
-		bool IMUpthread_stopping;
-		bool IMUpthread_running;
-		pthread_t IMUpthread;
-		pthread_attr_t IMUpthread_attributes;
-		friend void *IMUpthread_Polling(void *data);
+		bool IMUpthread_stopping;	/*!< stopping flag for RTIMULib reading and handling thread */
+		bool IMUpthread_running;	/*!< running flag for RTIMULib reading and handling thread */
+		pthread_t IMUpthread;	/*!< POSIX thread handler of RTIMULib reading and handling thread */
+		pthread_attr_t IMUpthread_attributes;	/*!< POSIX thread attributes of RTIMULib reading and handling thread */
+		friend void *IMUpthread_Polling(void *data);	/*!< friend declaration for RTIMULib reading and handling thread */
 #	endif
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		MHTelescope(const char* name="telescope");
-		~MHTelescope();
+		MHTelescope(const char* name="telescope");	/*!< constructor */
+		~MHTelescope();	/*!< destructor */
 
 		//	access methods
-		const char* GetName(const char* NULLRETURN="UNNAMED") const;
-		const char* ToString(void) const;
-		MHAstroVector* GetOrientation(void);
-		bool GetOrientation(double* RA, double* DEC);
+		const char* GetName(const char* NULLRETURN="UNNAMED") const;	/*!< access to current Name */
+		const char* ToString(void) const;	/*!< simple output function */
+		MHAstroVector* GetOrientation(void);	/*!< calculate current orientation from queue */
+		bool GetOrientation(double* RA, double* DEC);	/*!< calculate current orientation from queue */
 
 		//	preparation and manipulation methods
-		const char* SetName(const char* name);
-		MHLocation* SetLocation(double latitude, double longitude, double height=0, const char* name=NULL);
+		const char* SetName(const char* name);	/*!< set new Name */
+		MHLocation* SetLocation(double latitude, double longitude, double height=0, const char* name=NULL);	/*!< set new Location */
 
 	/*	RTIMULib members, for inertial measurement sensors
 	**	InitIMUSensor
 	**	PollIMUSensor
 	*/
 #	if defined(USE_RTIMULIB)
-		bool InitIMUSensor(void);
-		bool PollIMUSensor(void);
-		bool ImuNotMoving(void);
-		void IMUpthread_start(void);
-		void IMUpthread_stopp(void);
+		bool InitIMUSensor(void);	/*!< initialize RTIMULib */
+		bool PollIMUSensor(void);	/*!< poll RTIMULib sensor */
+		bool ImuNotMoving(void);	/*!< check RTIMULib sensor not showing movement*/
+		void IMUpthread_start(void);	/*!< start RTIMULib reading and handling thread */
+		void IMUpthread_stopp(void);	/*!< stop RTIMULib reading and handling thread */
 #	endif
 
 	};

@@ -21,6 +21,13 @@
 **	MA 02110-1301 USA.
 */
 
+/*!	\brief	calculation macros, constants and formulas
+ *
+ *	Declaration of constants, formulas and calculation macros
+ *	for use in C/C++ code.
+ *	Mostly for ease of coding and bug correction.
+ */
+
 #ifndef _MACROS_H_
 #	define _MACROS_H_
 

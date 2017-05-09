@@ -21,6 +21,13 @@
 **	MA 02110-1301 USA.
 */
 
+/*!	\brief	class MHAstroVector
+ *
+ *	Declaration of class, members and methods.
+ *	Special vector data definition and calculation methods for astronomical vector.
+ *	Combines Vector3D with Location, Offset and TimeStamp.
+ */
+
 #ifndef _ASTROVECTOR_HPP_
 #	define _ASTROVECTOR_HPP_
 
@@ -51,27 +58,27 @@ namespace piScope
 	private:	/* private members are accessible only from within the same class or "friends" */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
-		MHLocation* LocationOffset;	//	positional offset, must always remain LATLON
-		MHVector3D* BaseOffset;	//	base offset, may be len=0 just to indicate rotation
-		MHAstroTime* TS;	//	time stamp of vector
+		MHLocation* LocationOffset;	/*!< positional offset, must always remain LATLON vector type */
+		MHVector3D* BaseOffset;	/*!< base offset, may be len=0 just to indicate rotation */
+		MHAstroTime* TS;	/*!< time stamp of vector */
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
-		MHAstroVector(MHAstroVector* vec);
+		MHAstroVector(MHAstroVector* vec);	/*!< constructor */
 		MHAstroVector(MHVectorType_t vecType=VectorType_3DONLY, double vecX=0.0, double vecY=0.0, double vecZ=1.0
-			, double vecLen=1.0, MHLocation* vecLoc=NULL);
-		~MHAstroVector();
+			, double vecLen=1.0, MHLocation* vecLoc=NULL);	/*!< constructor */
+		~MHAstroVector();	/*!< destructor */
 
 		//	public manipulation methods
-		MHLocation* SetLocation(MHLocation* loc =NULL);
-		MHLocation* SetLocation(double latX, double lonY, double heightZ);
-		MHVector3D* SetBase(double vecX, double vecY, double vecZ, double vecLen);
-		MHAstroTime* SetTime(time_t ts =1);
+		MHLocation* SetLocation(MHLocation* loc =NULL);	/*!< set new Location */
+		MHLocation* SetLocation(double latX, double lonY, double heightZ);	/*!< set new Location */
+		MHVector3D* SetBase(double vecX, double vecY, double vecZ, double vecLen);	/*!< set new Base Offset */
+		MHAstroTime* SetTime(time_t ts =1);	/*!< set new time stamp */
 
 		//	public access methods
-		const char* ToString(void) const;
-		time_t GetElapsed(time_t ts =1) const;
-		double GetLocalSiderealAngle(void) const;
+		const char* ToString(void) const;	/*!< simple data output */
+		time_t GetElapsed(time_t ts =1) const;	/*!< get elapsed seconds since time stamp */
+		double GetLocalSiderealAngle(void) const;	/*!< get angle of vector according to local sidereal time */
 	};
 
 };

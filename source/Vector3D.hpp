@@ -21,6 +21,12 @@
 **	MA 02110-1301 USA.
 */
 
+/*!	\brief	class MHVector3D
+ *
+ *	Declaration of class, members and methods.
+ *	General vector data definition and calculation methods.
+ */
+
 #ifndef _VECTOR3D_HPP_
 #	define _VECTOR3D_HPP_
 
@@ -90,21 +96,21 @@ namespace piScope
 		VectorType_LocalNED,
 		VectorType_LocalRPY,
 		VectorType_J2000,
-	}	MHVectorType_t;
+	}	MHVectorType_t;	/*!< Type of the Vector */
 
 	class MHVector3D
 	{
 	private:	/* private members are accessible only from within the same class or "friends" */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
-		MHVectorType_t Type;
-		double X;
-		double Y;
-		double Z;
-		double Length;	//	vector length scale factor, !=0 offset, ==0 rotation
+		MHVectorType_t Type;	/*!< Type of the Vector */
+		double X;	/*!< X component of the Vector */
+		double Y;	/*!< Y component of the Vector */
+		double Z;	/*!< Z component of the Vector */
+		double Length;	/*!< vector length scale factor, >0 offset, ==0 rotation */
 
 		//	internal handling methods
-		bool FixLatLon(double* lat =NULL, double* lon =NULL);	//	return true=changed
+		bool FixLatLon(double* lat =NULL, double* lon =NULL);	/*!< fix values of LAT/LON, return true=changed */
 
 	public:	/* public members are accessible from anywhere */
 		//	constructor/destructor
@@ -113,29 +119,29 @@ namespace piScope
 		~MHVector3D();
 
 		//	public manipulation methods
-		MHVector3D* Set(MHVectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen);
-		MHVector3D* Set(double vecX, double vecY, double vecZ, double vecLen);
-		bool Validate(bool checkonly =false);	// return true=valid
+		MHVector3D* Set(MHVectorType_t vecType, double vecX, double vecY, double vecZ, double vecLen);	/*!< Set new values */
+		MHVector3D* Set(double vecX, double vecY, double vecZ, double vecLen);	/*!< set new values */
+		bool Validate(bool checkonly =false);	/*!< check values for validity, return true=valid */
 
 		//	public conversion methods
-		MHVector3D* Convert2ECEF(MHVector3D* sdVector =NULL);
+		MHVector3D* Convert2ECEF(MHVector3D* sdVector =NULL);	/*!< convert current values to ECEF */
 
 		//	public access methods
-		const char* ToString(void) const;
-		double GetX(void) const;
-		double GetOffsetX(double value) const;
-		double GetY(void) const;
-		double GetOffsetY(double value) const;
-		double GetZ(void) const;
-		double GetOffsetZ(double value) const;
-		MHVectorType_t GetType(void) const;
+		const char* ToString(void) const;	/*!< simple vector output */
+		double GetX(void) const;	/*!< get X component of vector */
+		double GetOffsetX(double value) const;	/*!< get X component offset of vector to another */
+		double GetY(void) const;	/*!< get Y component of vector */
+		double GetOffsetY(double value) const;	/*!< get Y component offset of vector to another */
+		double GetZ(void) const;	/*!< get Z component of vector */
+		double GetOffsetZ(double value) const;	/*!< get Z component offset of vector to another */
+		MHVectorType_t GetType(void) const;	/*!< get Type of vector */
 	};
 
 	//	some small helpers
-	const char* Angle_Deg2HMS(double angle, double* H=NULL, double* M=NULL, double* S=NULL);
-	const char* Angle_Rad2HMS(double angle, double* H=NULL, double* M=NULL, double* S=NULL);
-	const char* Angle_Deg2DMS(double angle, double* D=NULL, double* M=NULL, double* S=NULL);
-	const char* Angle_Rad2DMS(double angle, double* D=NULL, double* M=NULL, double* S=NULL);
+	const char* Angle_Deg2HMS(double angle, double* H=NULL, double* M=NULL, double* S=NULL);	/*!< angle conversion routine */
+	const char* Angle_Rad2HMS(double angle, double* H=NULL, double* M=NULL, double* S=NULL);	/*!< angle conversion routine */
+	const char* Angle_Deg2DMS(double angle, double* D=NULL, double* M=NULL, double* S=NULL);	/*!< angle conversion routine */
+	const char* Angle_Rad2DMS(double angle, double* D=NULL, double* M=NULL, double* S=NULL);	/*!< angle conversion routine */
 
 };
 
