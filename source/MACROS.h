@@ -88,6 +88,22 @@
 	//	ECEF_TIMEOFFSET = LongitudeDegrees * MeanSolarDaySeconds / MeanSolarDayRotationDegrees
 #	define ECEF_TIMEOFFSET(lon) ((lon) * EARTH_MEANSOLARDAY / EARTH_ROTATIONSOLARDAY)
 
+	//	Julian Day/Date of the system epoch (in UTC time)
+#	define TIME_UNIXEPOCH_JD (2440587.5L)
+	/*	julianDate =
+	**	DAY - 32075
+	**	+ 1461 *(YEAR + 4800 +(MONTH - 14)/ 12)/ 4
+	**	+ 367 * (MONTH - 2 -(MONTH - 14)/ 12 *12) 2/ 12
+	**	- 3 * ((YEAR + 4900 +(MONTH-14)/12)/100)/4;
+	*/
+#	define JULIAN_SECONDSPERDAY EARTH_SECONDSPERDAY
+#	define JULIAN_DAYSPERYEAR (365.25L)
+	//	Julian Date (simply use JD of epoch and add UTC converted to days)
+#	define TIME_UTC2JD(utc) (TIME_UNIXEPOCH_JD + ((utc) / JULIAN_SECONDSPERDAY))
+#	define TIME_JD2UTC(jd) (((jd) - TIME_UNIXEPOCH_JD) * JULIAN_SECONDSPERDAY)
+	//	Julian Centuries from reference date
+#	define TIME_JULIANCENTURY(utc) (TIME_UTC2JD(utc) / (JULIAN_DAYSPERYEAR * 100))
+
 	//	J2000_OBLIQUITY= 23° 26' 21.406" obliquity - angle between equatorial plane and ecliptic
 #	define J2000_OBLIQUITY LATLON_DMS2DEG(23,26,21.406)
 	//	J2000.0 epoch is exactly 12.00 noon in terrestrial time TT
@@ -97,9 +113,10 @@
 	//	J2000.0 epoch in Julian Day format is 2451545.0
 #	define J2000_EPOCH_JD (2451545.0L)
 	//	Modified Julian Date is number of days since midnight on November 17, 1858. (=2400000.5 days after day 0 of the Julian calendar)
-#	define J2000_EPOCH_MJD (2451544.0L - 2400000.5L)
+#	define J2000_EPOCH_MJD (J2000_EPOCH_JD - 2400000.5L)
 	//	J2000-JulianDay = count of days since J2000.0 epoch
 #	define J2000_JULIANDAY(utc) (((utc) - J2000_EPOCH_UTC) / EARTH_SECONDSPERDAY)
+#	define J2000_JULIANCENTURY(utc) (J2000_JULIANDAY(utc) / (JULIAN_DAYSPERYEAR * 100))
 	/*	GMST and LMST with 0.1sec accuracy
 	**	GMST and LMST are no real time stamp
 	**	GMST/LMST is the RA (right ascension in hour angle) of vernal equinox or celestial meridian
@@ -109,7 +126,9 @@
 #	define J2000_GMSTFIX(gmst) {while(EARTH_SECONDSPERDAY <= gmst) gmst -= EARTH_SECONDSPERDAY; while(0 > gmst) gmst += EARTH_SECONDSPERDAY;}
 #	define J2000_UTC2LMST(utc,lmst,lon) {for(lmst = (((18.697374558L + (EARTH_JULIANDAY * J2000_JULIANDAY(utc))) * 3600.0L) \
 						+ ((lon) * EARTH_SECONDSPERDAY / EARTH_ROTATIONSOLARDAY)); EARTH_SECONDSPERDAY <= lmst; \
-						lmst -= EARTH_SECONDSPERDAY){}; while(0 > lmst) lmst += EARTH_SECONDSPERDAY;}
+						lmst -= EARTH_SECONDSPERDAY){}; while(0 > lmst){lmst += EARTH_SECONDSPERDAY;}}
+#	define J2000_NORTHPOLE_RA(utc) (0.00L - (0.641L * J2000_JULIANCENTURY(utc)))
+#	define J2000_NORTHPOLE_DEC(utc) (90.00L - (0.557L * J2000_JULIANCENTURY(utc)))
 
 	//	UT1 (Universal Time) is essentially the same as GMT (Greenwich Mean Time)
 	//	UT1 = UTC - DUT1 (see ftp://maia.usno.navy.mil/ser7/ser7.dat)
