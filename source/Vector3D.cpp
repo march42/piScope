@@ -238,7 +238,7 @@ namespace piScope
 					, sin(DEG2RAD(source->Y)), cos(DEG2RAD(source->Y)));
 			#endif
 			//	prepare destination vector
-			destination->Length = LATLON_EARTHMR + source->Z;
+			destination->Length = EARTH_MEANRADIUS + source->Z;
 			destination->X = latlonX;
 			destination->Y = latlonY;
 			destination->Z = latlonZ;

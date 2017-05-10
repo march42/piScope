@@ -31,24 +31,62 @@
 #ifndef _MACROS_H_
 #	define _MACROS_H_
 
+	/*	conversion constants
+	**
+	*/
+#	define FULLCIRCLE_DEGREE (360)
+#	define FULLCIRCLE_RADIAN (M_PI * 2)
+	/*	earth geometry
+	**	RADIUS in m
+	**	Gravity in m/s^2
+	*/
+#	define EARTH_MODELRADIUS (6378000.0L)
+#	define EARTH_MEANRADIUS (6371008.0L)
+#	define EARTH_EQUATORIALRADIUS (6378137.0L)
+#	define EARTH_POLARRADIUS (6356752.314245L)
+#	define EARTH_MEANGRAVITY (9.80665L)
+	/*	earth sidereal parameters
+	**	time values in seconds
+	**	Seconds Per Day - seconds in a day for system time calculation
+	**	Sidereal Day - seconds for earth to turn once (distant star crossing the meridian)
+	**	Mean Solar Day - seconds between sun crossing meridian
+	**	Julian day in hours
+	*/
+#	define EARTH_SECONDSPERDAY (86400)
+#	define EARTH_SIDEREALDAY (86164.09053083288L)
+#	define EARTH_MEANSOLARDAY (86400.002L)
+#	define EARTH_JULIANDAY (24.06570982441908L)
+	/*	earth sidereal parameters
+	**	angles in degrees
+	*/
+#	define EARTH_ROTATIONSOLARDAY (360.9856L)
+#	define EARTH_ROTATIONSIDEREAL (360.0L)
+	/*	earth orbital parameters
+	**	Solar Distance in km (converted from 10^6km)
+	**	Orbit times in mean solar days
+	**	Inclination - tilt angle at equatorial plane in degrees
+	*/
+#	define EARTH_ORBITAXIS (149.598262L * 10E+6L)
+#	define EARTH_SIDEREALORBIT (365.256)
+#	define EARTH_TROPICALORBIT (365.242)
+#	define EARTH_PERIHELION (147.09L * 10E+6L)
+#	define EARTH_APHELION (152.10L * 10E+6L)
+#	define EARTH_INCLINATION (23.4393)
+
+	//	converting degree/radian
+#	define DEG2RAD(deg) ((deg) * FULLCIRCLE_RADIAN / FULLCIRCLE_DEGREE)
+#	define RAD2DEG(rad) ((rad) * FULLCIRCLE_DEGREE / FULLCIRCLE_RADIAN)
+
+	//	converting from seconds to Mean Sidereal Time hour angle (seconds per degree)
+#	define EARTH_ROTATIONSPD (EARTH_MEANSOLARDAY / EARTH_ROTATIONSIDEREAL)
+
 	//	DMS2DEG = D + (M /60) + (S /3600)
 #	define LATLON_DMS2DEG(D,M,S) ((D) + ((M) /60.0L) + ((S) /3600.0L))
 	//	HMS2DEG = (H *360/24) + (M *15/60) + (S *15/3600)
 #	define LATLON_HMS2DEG(D,M,S) (((H) *(360.0L/24)) + ((M) *(15.0L/60.0L)) + ((S) *(15.0L/3600.0L)))
-	//	LATLON_MSL=6371km mean sea level - average radius of earth sphere
-#	define LATLON_EARTHMR (6371000.0L)
 
-	//	ECEF_MEANSOLARDAY = 86400 seconds - mean solar day
-#	define ECEF_MEANSOLARDAY (86400.0L)
-	//	ECEF_ROTATION = 360.9856 degrees / mean solar day
-#	define ECEF_ROTATION (360.9856L)
 	//	ECEF_TIMEOFFSET = LongitudeDegrees * MeanSolarDaySeconds / MeanSolarDayRotationDegrees
-#	define ECEF_TIMEOFFSET(lon) ((lon) * ECEF_MEANSOLARDAY / ECEF_ROTATION)
-	/*	ECEF_SIDEREALDAY = 86164.09053083288 seconds - sidereal day
-	**	sidereal day is slightly shorter than mean solar day
-	**	the earth turns exactly 360 degrees during a sidereal day
-	*/
-#	define ECEF_SIDEREALDAY (86164.09053083288L)
+#	define ECEF_TIMEOFFSET(lon) ((lon) * EARTH_MEANSOLARDAY / EARTH_ROTATIONSOLARDAY)
 
 	//	J2000_OBLIQUITY= 23° 26' 21.406" obliquity - angle between equatorial plane and ecliptic
 #	define J2000_OBLIQUITY LATLON_DMS2DEG(23,26,21.406)
@@ -61,38 +99,29 @@
 	//	Modified Julian Date is number of days since midnight on November 17, 1858. (=2400000.5 days after day 0 of the Julian calendar)
 #	define J2000_EPOCH_MJD (2451544.0L - 2400000.5L)
 	//	J2000-JulianDay = count of days since J2000.0 epoch
-#	define J2000_JULIANDAY(utc) (((utc) - J2000_EPOCH_UTC) / ECEF_MEANSOLARDAY)
+#	define J2000_JULIANDAY(utc) (((utc) - J2000_EPOCH_UTC) / EARTH_SECONDSPERDAY)
 	/*	GMST and LMST with 0.1sec accuracy
 	**	GMST and LMST are no real time stamp
 	**	GMST/LMST is the RA (right ascension in hour angle) of vernal equinox or celestial meridian
 	**	either on prime meridian (GMST) or observers locality
 	*/
-#	define J2000_UTC2GMST(utc) ((18.697374558L + (24.06570982441908L * J2000_JULIANDAY(utc))) * 3600.0L)
-#	define J2000_GMSTFIX(gmst) {while(ECEF_MEANSOLARDAY <= gmst) gmst -= ECEF_MEANSOLARDAY; while(0 > gmst) gmst += ECEF_MEANSOLARDAY;}
-#	define J2000_UTC2LMST(utc,lmst,lon) {for(lmst = (((18.697374558L + (24.06570982441908L * J2000_JULIANDAY(utc))) * 3600.0L) \
-						+ ((lon) * ECEF_MEANSOLARDAY / ECEF_ROTATION)); ECEF_MEANSOLARDAY <= lmst; \
-						lmst -= ECEF_MEANSOLARDAY){}; while(0 > lmst) lmst += ECEF_MEANSOLARDAY;}
-
-	//	WGS84_EQUATORIALRADIUS = 6 378 137.0 m
-#	define WGS84_EQUATORIALRADIUS (6378137.0L)
-	//	WGS84_POLARRADIUS = 6 356 752.314 245 m
-#	define WGS84_POLARRADIUS (6356752.314245L)
+#	define J2000_UTC2GMST(utc) ((18.697374558L + (EARTH_JULIANDAY * J2000_JULIANDAY(utc))) * 3600.0L)
+#	define J2000_GMSTFIX(gmst) {while(EARTH_SECONDSPERDAY <= gmst) gmst -= EARTH_SECONDSPERDAY; while(0 > gmst) gmst += EARTH_SECONDSPERDAY;}
+#	define J2000_UTC2LMST(utc,lmst,lon) {for(lmst = (((18.697374558L + (EARTH_JULIANDAY * J2000_JULIANDAY(utc))) * 3600.0L) \
+						+ ((lon) * EARTH_SECONDSPERDAY / EARTH_ROTATIONSOLARDAY)); EARTH_SECONDSPERDAY <= lmst; \
+						lmst -= EARTH_SECONDSPERDAY){}; while(0 > lmst) lmst += EARTH_SECONDSPERDAY;}
 
 	//	UT1 (Universal Time) is essentially the same as GMT (Greenwich Mean Time)
 	//	UT1 = UTC - DUT1 (see ftp://maia.usno.navy.mil/ser7/ser7.dat)
 #	define TIME_UTC2UT1(utc) ((utc) - +0.4)
 	//	Julian dates (JD) = count of days since noon Universal Time on January 1, 4713 BC (Julian calendar)
-#	define TIME_UTC2JD(utc) (J2000_EPOCH_JD + (((utc) - J2000_EPOCH_UTC) / ECEF_MEANSOLARDAY))
-#	define TIME_UTC2MJD(utc) (J2000_EPOCH_MJD + (((utc) - J2000_EPOCH_UTC) / ECEF_MEANSOLARDAY))
+#	define TIME_UTC2JD(utc) (J2000_EPOCH_JD + (((utc) - J2000_EPOCH_UTC) / EARTH_SECONDSPERDAY))
+#	define TIME_UTC2MJD(utc) (J2000_EPOCH_MJD + (((utc) - J2000_EPOCH_UTC) / EARTH_SECONDSPERDAY))
 	//	Day since epoch
-#	define DAY_SINCE_EPOCH(time,epoch) (((time) - epoch) / ECEF_MEANSOLARDAY)
+#	define DAY_SINCE_EPOCH(time,epoch) (((time) - epoch) / EARTH_SECONDSPERDAY)
 	/*	GMST = 280.46061837 + 360.98564736629 * d + 0.000388 * t^2
 	**	d = Julian Days since J2000.0
 	**	t = Julian Centuries since J2000.0 = d / 36525
 	*/
-
-	//	converting degree/radian
-#	define DEG2RAD(deg) ((deg) * M_PI / 180.0)
-#	define RAD2DEG(rad) ((rad) * 180.0 / M_PI)
 
 #endif	/* _MACROS_H_ */

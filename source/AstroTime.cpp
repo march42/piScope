@@ -117,7 +117,7 @@ namespace piScope
 		//	get Mean Sidereal Time angle in seconds
 		J2000_UTC2LMST(this->UTC, mst, (GMST ?0 :this->TimeLocation->GetLongitude()));
 		//	angle = seconds / (86400s / 360°)
-		mst /= (ECEF_MEANSOLARDAY / 360.0L);
+		mst /= EARTH_ROTATIONSPD;
 		return(mst);
 	}
 
