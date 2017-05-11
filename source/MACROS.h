@@ -88,8 +88,12 @@
 	//	ECEF_TIMEOFFSET = LongitudeDegrees * MeanSolarDaySeconds / MeanSolarDayRotationDegrees
 #	define ECEF_TIMEOFFSET(lon) ((lon) * EARTH_MEANSOLARDAY / EARTH_ROTATIONSOLARDAY)
 
+	//	UT1 (Universal Time) is essentially the same as GMT (Greenwich Mean Time)
+	//	UT1 = UTC - DUT1 (see ftp://maia.usno.navy.mil/ser7/ser7.dat)
+#	define TIME_UTC2UT1(utc) ((utc) - +0.4)
 	//	Julian Day/Date of the system epoch (in UTC time)
 #	define TIME_UNIXEPOCH_JD (2440587.5L)
+#	define TIME_UNIXEPOCH_MJD (TIME_UNIXEPOCH_JD - 2400000.5L)
 	/*	julianDate =
 	**	DAY - 32075
 	**	+ 1461 *(YEAR + 4800 +(MONTH - 14)/ 12)/ 4
@@ -98,11 +102,20 @@
 	*/
 #	define JULIAN_SECONDSPERDAY EARTH_SECONDSPERDAY
 #	define JULIAN_DAYSPERYEAR (365.25L)
+	//	Julian dates (JD) = count of days since noon Universal Time on January 1, 4713 BC (Julian calendar)
 	//	Julian Date (simply use JD of epoch and add UTC converted to days)
 #	define TIME_UTC2JD(utc) (TIME_UNIXEPOCH_JD + ((utc) / JULIAN_SECONDSPERDAY))
+#	define TIME_UTC2MJD(utc) (TIME_UNIXEPOCH_MJD + ((utc) / JULIAN_SECONDSPERDAY))
 #	define TIME_JD2UTC(jd) (((jd) - TIME_UNIXEPOCH_JD) * JULIAN_SECONDSPERDAY)
 	//	Julian Centuries from reference date
 #	define TIME_JULIANCENTURY(utc) (TIME_UTC2JD(utc) / (JULIAN_DAYSPERYEAR * 100))
+
+	//	Day since epoch
+#	define DAY_SINCE_EPOCH(time,epoch) (((time) - epoch) / EARTH_SECONDSPERDAY)
+	/*	GMST = 280.46061837 + 360.98564736629 * d + 0.000388 * t^2
+	**	d = Julian Days since J2000.0
+	**	t = Julian Centuries since J2000.0 = d / 36525
+	*/
 
 	//	J2000_OBLIQUITY= 23° 26' 21.406" obliquity - angle between equatorial plane and ecliptic
 #	define J2000_OBLIQUITY LATLON_DMS2DEG(23,26,21.406)
@@ -129,18 +142,5 @@
 						lmst -= EARTH_SECONDSPERDAY){}; while(0 > lmst){lmst += EARTH_SECONDSPERDAY;}}
 #	define J2000_NORTHPOLE_RA(utc) (0.00L - (0.641L * J2000_JULIANCENTURY(utc)))
 #	define J2000_NORTHPOLE_DEC(utc) (90.00L - (0.557L * J2000_JULIANCENTURY(utc)))
-
-	//	UT1 (Universal Time) is essentially the same as GMT (Greenwich Mean Time)
-	//	UT1 = UTC - DUT1 (see ftp://maia.usno.navy.mil/ser7/ser7.dat)
-#	define TIME_UTC2UT1(utc) ((utc) - +0.4)
-	//	Julian dates (JD) = count of days since noon Universal Time on January 1, 4713 BC (Julian calendar)
-#	define TIME_UTC2JD(utc) (J2000_EPOCH_JD + (((utc) - J2000_EPOCH_UTC) / EARTH_SECONDSPERDAY))
-#	define TIME_UTC2MJD(utc) (J2000_EPOCH_MJD + (((utc) - J2000_EPOCH_UTC) / EARTH_SECONDSPERDAY))
-	//	Day since epoch
-#	define DAY_SINCE_EPOCH(time,epoch) (((time) - epoch) / EARTH_SECONDSPERDAY)
-	/*	GMST = 280.46061837 + 360.98564736629 * d + 0.000388 * t^2
-	**	d = Julian Days since J2000.0
-	**	t = Julian Centuries since J2000.0 = d / 36525
-	*/
 
 #endif	/* _MACROS_H_ */
