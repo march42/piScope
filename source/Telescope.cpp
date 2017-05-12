@@ -288,9 +288,9 @@ namespace piScope
 				double GAMMA = atan2(-1 * compassHorizontalY, compassHorizontalX);
 #				else
 				RTVector3 pose = this->ImuSensor->getMeasuredPose();	//	roll,pitch,yaw
-				double ALPHA = pose.x();
-				double BETA = pose.y();
-				double GAMMA = pose.z();
+				double ALPHA = pose.x();	//	?pitch
+				double BETA = pose.y();		//	?roll
+				double GAMMA = pose.z();	//	yaw
 #				endif
 				//	create vector and push to queue
 				MHAstroVector* ori = new MHAstroVector(VectorType_LocalRPY, ALPHA, BETA, GAMMA, 0);

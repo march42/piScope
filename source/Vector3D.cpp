@@ -291,6 +291,14 @@ namespace piScope
 				, (0>lonD ?-1 :1) * (int)lonD, (0>lonD ?"W" :"E"), (int)lonM, lonS
 				, this->Z);
 		}
+		else if(VectorType_LocalRPY == this->Type)
+		{
+			double roll = RAD2DEG(this->X);
+			double pitch = RAD2DEG(this->Y);
+			double yaw = RAD2DEG(this->Z);
+			//	print to buffer
+			snprintf(&buffer[0], sizeof(buffer), "%s [%f,%f,%f]", type[this->Type], roll,pitch,yaw);
+		}
 		else if(VectorType_LocalNED == this->Type)
 		{
 			double roll = RAD2DEG(this->X);

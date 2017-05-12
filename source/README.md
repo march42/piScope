@@ -28,7 +28,7 @@ MA 02110-1301 USA.
 - [x] option USE_LINUX_I2CDEV for I2Csensor.cpp - to use system include file
 - [x] option USE_MADGWICK_AHRS for IMU.cpp - to use Madgwick sensor filtering and fusion
 - [x] remove own copy of i2c-dev.h - it comes with libi2c-dev
-- [ ] add RTIMULib to class Telescope (maybe better to Vector3D, but these lacks TimeStamp)
+- [x] add RTIMULib to class Telescope (maybe better to Vector3D, but these lacks TimeStamp)
 - [ ] add GPS (or other system specific) position detection to class Location
 - [ ] add server code for remote access to class Telescope
 - [ ] remove old, now unneeded, code
@@ -39,3 +39,19 @@ MA 02110-1301 USA.
 - [x] add statistical locking to orientation (the more data the more precision
 - [ ] correct angles - most probably misinterpretation of radian and degree
 - [ ] dont rely on RTIMULib-calculatedPose use own trigonometric
+
+## general definitions
+### angles in MHAstroVector type=LocalRPY
+* preferably stored in RADIAN (-PI..0..PI)
+* gravitational vector pointing from location to earth's center of mass
+* X axis facing front, rotation clock-wise -90..roll..90, 0=horizontal, +90=left straight up, -90=left straight down
+* Y axis facing right, rotation clock-wise -180..pitch..180, 0=horizontal, +90=nose straight up, -90=nose straight down
+* Yaw/Azimuth - Z axis facing up, rotation clock-wise 0..yaw..360degree, 0=north, 90=east, 180=south, 270=west
+### Euler angles
+* Yaw, defined as clock wise rotation from X to X' on horizontal plane, viewing down from above, > turned to right
+* Pitch, defined as angle between X/X' axis and horizontal plane, clock wise turn along Y axis, > rising X axis
+* Roll, defined as angle between Y axis and horizontal plane, clock wise turn along X axis, > falling Y axis
+### RTIMULib calculated pose
+* X is roll
+* Y is pitch
+* Z is yaw
