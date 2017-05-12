@@ -142,7 +142,8 @@ namespace piScope
 		}
 		//	convert:	local hour angle = local sidereal time - right ascension
 		*RA = vec->GetLocalSiderealAngle();
-		double rad = asin (vec->GetX() / (sqrt(pow(vec->GetX(),2) + pow(vec->GetY(),2) + pow(vec->GetZ(),2))));
+		//	declination = elevation + ecliptic
+		double rad = asin (vec->GetY() / (sqrt(pow(vec->GetX(),2) + pow(vec->GetY(),2) + pow(vec->GetZ(),2))));
 		*DEC = RAD2DEG(rad);
 		//	return
 		return(true);
@@ -252,10 +253,19 @@ namespace piScope
 			//	new data
 			if(this->ImuData.accelValid && this->ImuData.compassValid)
 			{
+#				if defined(CALCULATE_ORIENTATION)
 				RTVector3 accel = this->ImuData.accel;
-				accel.normalize();	//	x+y+z=1
+				//accel.normalize();	//	x+y+z=1
 				RTVector3 compass = this->ImuData.compass;
-				compass.normalize();	//	x+y+z=1
+				//compass.normalize();	//	x,y,z = x,y,z /sqrt(x^2 + y^2 + z^2)
+				/*	value ranges and fusion
+				**	accelerometer (-1 .. length .. +1 g) measuring earth gravitational vector pointing to center of mass
+				**	compass (-25-65 .. length .. +25-65 microtesla) measuring earth magnetic field lines (ranging from 25 to 65 microtesla)
+				**	RTIMULib compass scale for +/- 4gauss = 0.014 -> 4/32768=0.00014 so values are in microtesla (10000gauss=1tesla, 1gauss=100microtesla)
+				**	compass value needs to be fit to -1..+1 with x,y,z = x,y,z /(x+y+z)
+				*/
+				double compassLength = sqrt(pow(compass.x(),2) + pow(compass.y(),2) + pow(compass.z(),2));	// length of compass vector for normalize
+				RTVector3 compass1(compass.x() /compassLength, compass.y() /compassLength, compass.z() /compassLength);	// normalized compass vector
 				//	calculate angle
 				/*	tri axis tilt sensing
 				**	alpha = arcsin( ax1 / g )
@@ -269,18 +279,21 @@ namespace piScope
 				double ALPHA = asin(accel.x() / sqrt((accel.x()*accel.x()) + (accel.y()*accel.y()) + (accel.z()*accel.z())));	// -1<a<+1
 				double BETA = asin(accel.y() / sqrt((accel.x()*accel.x()) + (accel.y()*accel.y()) + (accel.z()*accel.z())));	// -1<a<+1
 				//double GAMMA = acos(accel.z() / sqrt((accel.x()*accel.x()) + (accel.y()*accel.y()) + (accel.z()*accel.z())));	// -1<a<+1
-				//	calculate RA and limit angle value to 2*PI (360 degree)
-				double RA = atan2(-1 * compass.y(), (compass.x() * accel.z()) + (compass.z() * accel.x()));	// -PI<RA<+PI
-				while(2 * M_PI < RA)
-				{
-					RA -= (2 * M_PI);
-				}
-				while(0 > RA)
-				{
-					RA += (2 * M_PI);
-				}
+				/*	tilt compensation
+				**	transform magnetometer data to horizontal plane (compassHorizontalX,compassHorizontalY)
+				**	calculate compensated angle = atan2( -HoriY / HoriX )
+				*/
+				double compassHorizontalX = (compass1.x() * cos(BETA)) + (compass1.y() * sin(BETA) * sin(ALPHA)) + (compass1.z() * sin(BETA) * cos(ALPHA));
+				double compassHorizontalY = (compass1.y() * cos(ALPHA)) + (compass1.z() * sin(ALPHA));
+				double GAMMA = atan2(-1 * compassHorizontalY, compassHorizontalX);
+#				else
+				RTVector3 pose = this->ImuSensor->getMeasuredPose();	//	roll,pitch,yaw
+				double ALPHA = pose.x();
+				double BETA = pose.y();
+				double GAMMA = pose.z();
+#				endif
 				//	create vector and push to queue
-				MHAstroVector* ori = new MHAstroVector(VectorType_LocalRPY, ALPHA, BETA, RA, 0);
+				MHAstroVector* ori = new MHAstroVector(VectorType_LocalRPY, ALPHA, BETA, GAMMA, 0);
 				#if defined(DONT_OPTIMIZE_TIMESTAMP)
 				//	this->ImuData.timestamp = RTMath::currentUSecsSinceEpoch()
 				struct timeval tvnow;
@@ -339,6 +352,13 @@ namespace piScope
 						, (mother->ImuData.accelValid ?"" :"!"), mother->ImuData.accel.x(),mother->ImuData.accel.y(),mother->ImuData.accel.z()
 						, (mother->ImuData.compassValid ?"" :"!"), mother->ImuData.compass.x(),mother->ImuData.compass.y(),mother->ImuData.compass.z());
 				}
+				//	clear Orientation deque on movement
+				if(mother->ImuData.gyroValid && read_rate < (int)mother->Orientation.size()
+					&& 0.2 < (abs(mother->ImuData.gyro.x()) + abs(mother->ImuData.gyro.y()) + abs(mother->ImuData.gyro.z())))
+				{
+					mother->printLog(8,"IMU:\tclear on movement [%f,%f,%f]\n", abs(mother->ImuData.gyro.x()), abs(mother->ImuData.gyro.y()), abs(mother->ImuData.gyro.z()));
+					mother->Orientation.clear();
+				}
 				usleep(1000000 / read_rate);	//	calculate micro seconds from polling rate
 			}
 			else
@@ -391,6 +411,8 @@ namespace piScope
 		pthread_join(this->IMUpthread, NULL);
 		this->IMUpthread = pthread_self();
 		this->printLog(9,"IMUpthread_stopp:\t%s\n", "stopped IMUpthread_Polling");
+		//	clear orientation buffer
+		this->Orientation.clear();
 	}
 #	endif
 
