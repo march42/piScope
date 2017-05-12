@@ -29,6 +29,7 @@ or install package libi2c-dev
 * AHRS algorithm by Sebastian Madgwick http://x-io.co.uk/open-source-imu-and-ahrs-algorithms/
 * richards-tech RTIMULib found at https://github.com/RPi-Distro/RTIMULib
 * RTIMULib2 found at https://github.com/RTIMULib/RTIMULib2
+* SOFA library created by IAU http://www.iausofa.org/tandc.html
 
 ## Status und ToDo
 - Der 9DOF liefert immer etwas sinnfreie Werte, aber schon grob mit richtiger Richtung.
@@ -37,3 +38,5 @@ or install package libi2c-dev
 - Check out the Explore-Scientific PMC-Eight controller and mount
 - with RTIMULib the IMU sensor values are getting close, to usable
 - automated installing/building of libi2c-dev, pigpio, RTIMULib
+- after using RTIMULib for the IMU sensor the data is getting closer to useable
+- need to check out SOFA library, to ease work
