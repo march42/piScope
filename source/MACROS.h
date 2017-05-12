@@ -92,8 +92,9 @@
 	//	UT1 = UTC - DUT1 (see ftp://maia.usno.navy.mil/ser7/ser7.dat)
 #	define TIME_UTC2UT1(utc) ((utc) - +0.4)
 	//	Julian Day/Date of the system epoch (in UTC time)
+#	define TIME_MJDEPOCH_JD (2400000.5L)
 #	define TIME_UNIXEPOCH_JD (2440587.5L)
-#	define TIME_UNIXEPOCH_MJD (TIME_UNIXEPOCH_JD - 2400000.5L)
+#	define TIME_UNIXEPOCH_MJD (TIME_UNIXEPOCH_JD - TIME_MJDEPOCH_JD)
 	/*	julianDate =
 	**	DAY - 32075
 	**	+ 1461 *(YEAR + 4800 +(MONTH - 14)/ 12)/ 4
@@ -126,7 +127,7 @@
 	//	J2000.0 epoch in Julian Day format is 2451545.0
 #	define J2000_EPOCH_JD (2451545.0L)
 	//	Modified Julian Date is number of days since midnight on November 17, 1858. (=2400000.5 days after day 0 of the Julian calendar)
-#	define J2000_EPOCH_MJD (J2000_EPOCH_JD - 2400000.5L)
+#	define J2000_EPOCH_MJD (J2000_EPOCH_JD - TIME_MJDEPOCH_JD)
 	//	J2000-JulianDay = count of days since J2000.0 epoch
 #	define J2000_JULIANDAY(utc) (((utc) - J2000_EPOCH_UTC) / EARTH_SECONDSPERDAY)
 #	define J2000_JULIANCENTURY(utc) (J2000_JULIANDAY(utc) / (JULIAN_DAYSPERYEAR * 100))
