@@ -10,7 +10,7 @@ TESTPROGRAMS = test test_i2csensor test_vector test_rtimulib
 CCFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG
 LDFLAGS = -O3 -s -lstdc++ -pthread -lm
 
-CONFIG_H = $(shell awk '/^[^\/].*define.*true/ { print $$3 }' ../config.h)
+CONFIG_H = $(shell sed -r 's,^\\s*\#\\s*define,\#define,' ../config.h | awk '/[^\/]\#define .+ true/ {print $$2}')
 ifneq (,$(findstring USE_RTIMULIB,$(CONFIG_H)))
 LDFLAGS += -lRTIMULib
 endif
