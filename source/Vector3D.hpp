@@ -30,7 +30,7 @@
 #ifndef _VECTOR3D_HPP_
 #	define _VECTOR3D_HPP_
 
-#	include "config.hpp"
+#	include "../config.hpp"
 
 #	include <unistd.h>
 

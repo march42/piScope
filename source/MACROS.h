@@ -31,7 +31,7 @@
 #ifndef _MACROS_H_
 #	define _MACROS_H_
 
-#	include "config.hpp"
+#	include "../config.hpp"
 
 	/*	conversion constants
 	**

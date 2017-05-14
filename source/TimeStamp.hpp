@@ -30,7 +30,7 @@
 #ifndef _TIMESTAMP_HPP_
 #	define _TIMESTAMP_HPP_
 
-#	include "config.hpp"
+#	include "../config.hpp"
 
 #	include <ctime>
 

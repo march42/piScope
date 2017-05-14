@@ -31,7 +31,7 @@
 #ifndef _ASTROVECTOR_HPP_
 #	define _ASTROVECTOR_HPP_
 
-#	include "config.hpp"
+#	include "../config.hpp"
 #	include "Vector3D.hpp"
 #	include "AstroTime.hpp"
 

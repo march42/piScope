@@ -31,7 +31,7 @@
 #ifndef _LOCATION_HPP_
 #	define _LOCATION_HPP_
 
-#	include "config.hpp"
+#	include "../config.hpp"
 #	include "Vector3D.hpp"
 
 #	include <unistd.h>
