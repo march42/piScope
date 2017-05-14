@@ -11,7 +11,7 @@ CCFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG
 LDFLAGS = -O3 -s -lstdc++ -pthread -lm
 
 CONFIG_H = $(shell sed -r 's,^\s*\#\s*define,\#define,' ../config.h | awk '/^\#define .+ true/ {print $$2}')
-$(warning config.h defines $(CONFIG_H))
+$(info config.h defines $(CONFIG_H))
 ifneq (,$(findstring USE_RTIMULIB,$(CONFIG_H)))
 LDFLAGS += -lRTIMULib
 endif
