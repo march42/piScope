@@ -30,25 +30,22 @@
  *	__TEST_RTIMULIB__
  */
 
-#if defined(__TEST_I2CSENSOR__)
+//#if defined(__TEST_I2CSENSOR__)
 #	include "I2Csensor.hpp"
 #	include "IMU.hpp"
-#elif defined(__TEST_VECTOR__)
+//#elif defined(__TEST_VECTOR__)
 #	include "AstroVector.hpp"
-#elif defined(__TEST_RTIMULIB__)
+//#elif defined(__TEST_RTIMULIB__)
 #	include "AstroTime.hpp"
 #	include "AstroVector.hpp"
 #	include "Telescope.hpp"
-#else
-#	error "NO TARGET SPECIFIED FOR COMPILING: " __FILE__
-#	define __TEST_RTIMULIB__	/* editing hack for Code::Blocks */
-#endif // defined(__TEST_I2CSENSOR__) || defined(__TEST_VECTOR__) || defined(__TEST_RTIMULIB__)
+//#else
+//#	error "NO TARGET SPECIFIED FOR COMPILING: " __FILE__
+//#endif // defined(__TEST_I2CSENSOR__) || defined(__TEST_VECTOR__) || defined(__TEST_RTIMULIB__)
 
 #include <unistd.h>
 #include <cstdio>
 #include <iostream>
-
-#define	TESTLOCATION (+49.964608),(+9.146783),(+145),("Aschaffenburg")
 
 static volatile bool keep_running = true;
 #ifdef WIN32
@@ -85,34 +82,13 @@ static volatile bool keep_running = true;
 	}
 #endif
 
-int main(int argc, char* argv[], char* envp[])
+int test_i2csensor(int argc, char* argv[], char* envp[])
 {
 	//	parameters may be unused
 	(void)argc;
+	(void)argv;
 	(void)envp;
-	//	programm greeting
-	std::cout << argv[0] << "\t" << "(build " << __DATE__ << ")" << std::endl;
-
-	// prepare signal handling
-	{
-#		ifdef WIN32
-		if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)signal_handler, TRUE))
-		{
-			std::cerr << "SetConsoleCtrlHandler failed" << std::endl;
-			return 127;
-		}
-#		else
-		//	ignore SIGPIPE
-		signal(SIGPIPE, SIG_IGN);
-		signal(SIGINT, signal_handler);
-		signal(SIGTERM, signal_handler);
-		signal(SIGQUIT, signal_handler);
-		//	?keep running after SIGHUP
-		//signal(SIGHUP,signal_handler);
-#		endif
-	}
-
-#	if defined(__TEST_I2CSENSOR__)
+	//	main routine
 	rpiScope::I2Csensor imu(rpiScope::I2C_AutoIdentify,-1,"/dev/i2c-1");
 	imu.pthread_I2Creading();
 	while(keep_running)
@@ -155,8 +131,16 @@ int main(int argc, char* argv[], char* envp[])
 		delete(fusion);
 		sleep(1);
 	}
+	return(0);
+}
 
-#	elif defined(__TEST_VECTOR__)
+int test_vector(int argc, char* argv[], char* envp[])
+{
+	//	parameters may be unused
+	(void)argc;
+	(void)argv;
+	(void)envp;
+
 	//	test Location
 	piScope::MHLocation here(TESTLOCATION);
 	fprintf(stdout, "\tLocation:\t%s\n", here.ToString());
@@ -176,12 +160,22 @@ int main(int argc, char* argv[], char* envp[])
 	fprintf(stdout, "\tModified JulianDate:\t%f\n", now.GetJulianDate(true));
 
 	//	test 3D vector
-	piScope::MHVector3D aburg = *here.ToVector();
-	fprintf(stdout, "\tAschaffenburg:\t%s\n", aburg.ToString());
-	piScope::MHVector3D* ecef = aburg.Convert2ECEF();
-	fprintf(stdout, "\tAschaffenburg:\t%s\n", ecef->ToString());
+	piScope::MHVector3D testloc = *here.ToVector();
+	fprintf(stdout, "\tTESTLOCATION:\t%s\n", testloc.ToString());
+	piScope::MHVector3D* ecef = testloc.Convert2ECEF();
+	fprintf(stdout, "\tTESTLOCATION:\t%s\n", ecef->ToString());
 
-#	elif defined(__TEST_RTIMULIB__)
+	//	exit
+	return(0);
+}
+
+int test_rtimulib(int argc, char* argv[], char* envp[])
+{
+	//	parameters may be unused
+	//(void)argc;
+	//(void)argv;
+	(void)envp;
+
 	piScope::MHTelescope scope("myScope");
 	int loglevel = 6;
 	const char* logfile = "myScope.log";
@@ -202,6 +196,12 @@ int main(int argc, char* argv[], char* envp[])
 	fprintf(stdout, "Telescope:\t%s\n", scope.ToString());
 
 	keep_running = scope.InitIMUSensor();
+	if(!keep_running)
+	{
+		scope.printLog(0,"scope:\tInitIMUSensor failed\n");
+		return(1);
+	}
+
 	scope.IMUpthread_start();
 	while(keep_running)
 	{
@@ -215,9 +215,60 @@ int main(int argc, char* argv[], char* envp[])
 		sleep(1);
 	}
 
-	//
+	//	exit
+	return(0);
+}
 
-#endif // defined(__TEST_I2CSENSOR__) || defined(__TEST_VECTOR__) || defined(__TEST_RTIMULIB__)
+int main(int argc, char* argv[], char* envp[])
+{
+	//	parameters may be unused
+	(void)argc;
+	(void)envp;
+	//	programm greeting
+	std::cout << argv[0] << "\t" << "(build " << __DATE__ << ")" << std::endl;
+
+	// prepare signal handling
+	{
+#		ifdef WIN32
+		if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)signal_handler, TRUE))
+		{
+			std::cerr << "SetConsoleCtrlHandler failed" << std::endl;
+			return 127;
+		}
+#		else
+		//	ignore SIGPIPE
+		signal(SIGPIPE, SIG_IGN);
+		signal(SIGINT, signal_handler);
+		signal(SIGTERM, signal_handler);
+		signal(SIGQUIT, signal_handler);
+		//	?keep running after SIGHUP
+		//signal(SIGHUP,signal_handler);
+#		endif
+	}
+
+#	if defined(__TEST_I2CSENSOR__)
+		test_i2csensor(argc, argv, envp);
+#	elif defined(__TEST_VECTOR__)
+		test_vector(argc, argv, envp);
+#	elif defined(__TEST_RTIMULIB__)
+		test_rtimulib(argc, argv, envp);
+#	else
+	for(int pos = 1; argc > pos; ++pos)
+	{
+		if(NULL != strstr(argv[pos],"test_i2csensor"))
+		{
+			test_i2csensor(argc, argv, envp);
+		}
+		else if(NULL != strstr(argv[pos],"test_vector"))
+		{
+			test_vector(argc, argv, envp);
+		}
+		else if(NULL != strstr(argv[pos],"test_rtimulib"))
+		{
+			test_rtimulib(argc, argv, envp);
+		}
+	}
+#	endif // defined(__TEST_I2CSENSOR__) || defined(__TEST_VECTOR__) || defined(__TEST_RTIMULIB__)
 
 	//	done
 	fprintf(stdout, "Bye.\n");

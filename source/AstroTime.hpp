@@ -31,7 +31,7 @@
 #ifndef _ASTROTIME_HPP_
 #	define _ASTROTIME_HPP_
 
-#	include "../config.hpp"
+#	include "../config.h"
 #	include "TimeStamp.hpp"
 #	include "Location.hpp"
 

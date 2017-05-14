@@ -30,7 +30,7 @@
 #ifndef _LOGFILE_HPP_
 #	define _LOGFILE_HPP_
 
-#	include "../config.hpp"
+#	include "../config.h"
 
 #	include <unistd.h>
 #	include <cstdio>

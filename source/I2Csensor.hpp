@@ -31,6 +31,7 @@
 #ifndef _I2CSENSOR_HPP_
 #define _I2CSENSOR_HPP_
 
+#include "../config.h"
 #include "IMU.hpp"
 
 #include <cstdlib>
@@ -88,8 +89,6 @@ namespace rpiScope
 			 */
 			I2Csensortype sensortype;
 			void I2Cinitialize(void);
-#			define I2C_BUFFER_MAXPAGE 4
-#			define I2C_BUFFER_PAGESIZE 256
 			unsigned char DataBuffer[I2C_BUFFER_MAXPAGE*I2C_BUFFER_PAGESIZE];
 			void I2Cread2buffer(void);
 			void I2Creadimu(void);

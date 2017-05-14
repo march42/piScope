@@ -8,14 +8,13 @@ LIBRARIES_O = $(LIBRARIES_CPP:.cpp=.o)
 TESTPROGRAMS = test_i2csensor test_vector test_rtimulib
 
 CCFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG
-#CCFLAGS += -DUSE_LINUX_I2CDEV
 LDFLAGS = -O3 -s -lstdc++ -pthread -lm
 
-#CCFLAGS += -DUSE_RTIMULIB
+CONFIG_H = $(shell awk '/^[^\/].*define.*true/ { print $$3 }' ../config.h)
+ifneq (,$(findstring USE_RTIMULIB,$(CONFIG_H)))
 LDFLAGS += -lRTIMULib
-
-#CCFLAGS += -DUSE_MADGWICK_AHRS
-ifneq (,$(findstring USE_MADGWICK_AHRS,$(CCFLAGS)))
+endif
+ifneq (,$(findstring USE_MADGWICK_AHRS,$(CONFIG_H)))
 LIBRARIES_O += MadgwickAHRS.o
 endif
 
@@ -40,9 +39,8 @@ all: $(LIBRARIES_O) test
 test: $(TESTPROGRAMS)
 
 clean:
-	-$(RM) $(LIBRARIES_O) $(test-i2csensor_O) $(test-vector_O)
-	-$(RM) $(LIBRARIES_OBJ) $(test-i2csensor_OBJ) $(test-vector_OBJ)
-	-$(RM) test-i2csensor test-vector
+	-$(RM) $(LIBRARIES_O)
+	-$(RM) test_i2csensor test_vector test_rtimulib
 
 MadgwickAHRS.o: ../MadgwickAHRS/MadgwickAHRS.c
 	$(CC)  $(CCFLAGS) $(CCEXTRA) $< -c -o $@

@@ -81,4 +81,16 @@
 	*/
 //#	define USE_TIMESTAMP_IMUNOTMOVING true
 
+	/*	TESTLOCATION
+	**	latitude,longitude,height,name
+	*/
+#	define TESTLOCATION (+49.964608),(+9.146783),(+145),("Aschaffenburg")
+
+	/*	I2C_BUFFER_(...)
+	**	configuration of buffer size for i2c communication
+	**	unnecessary if RTIMULib is used
+	*/
+#	define I2C_BUFFER_MAXPAGE 4
+#	define I2C_BUFFER_PAGESIZE 256
+
 #endif

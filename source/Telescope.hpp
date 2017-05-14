@@ -29,7 +29,7 @@
 #ifndef _TELESCOPE_HPP_
 #	define _TELESCOPE_HPP_
 
-#	include "../config.hpp"
+#	include "../config.h"
 #	include "LogFile.hpp"
 #	include "TimeStamp.hpp"
 #	include "AstroTime.hpp"
