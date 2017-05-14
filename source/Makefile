@@ -8,12 +8,16 @@ LIBRARIES_O = $(LIBRARIES_CPP:.cpp=.o)
 TESTPROGRAMS = test_i2csensor test_vector test_rtimulib
 
 CCFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG
-CCFLAGS += -DUSE_LINUX_I2CDEV
-CCFLAGS += -DUSE_MADGWICK_AHRS
+#CCFLAGS += -DUSE_LINUX_I2CDEV
 LDFLAGS = -O3 -s -lstdc++ -pthread -lm
 
-CCFLAGS += -DUSE_RTIMULIB
+#CCFLAGS += -DUSE_RTIMULIB
 LDFLAGS += -lRTIMULib
+
+#CCFLAGS += -DUSE_MADGWICK_AHRS
+ifneq (,$(findstring USE_MADGWICK_AHRS,$(CCFLAGS)))
+LIBRARIES_O += MadgwickAHRS.o
+endif
 
 ifeq ($(OS),Windows_NT)
 	RM = del /Q /F
@@ -21,10 +25,6 @@ ifeq ($(OS),Windows_NT)
 else
 	RM = rm -f
 	RRM = rm -f -r
-endif
-
-ifneq (,$(findstring USE_MADGWICK_AHRS,$(CCFLAGS)))
-LIBRARIES_O += MadgwickAHRS.o
 endif
 
 .SUFFIXES: .cpp .o .obj

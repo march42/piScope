@@ -30,6 +30,8 @@
 #ifndef _VECTOR3D_HPP_
 #	define _VECTOR3D_HPP_
 
+#	include "config.hpp"
+
 #	include <unistd.h>
 
 namespace piScope
@@ -45,9 +47,9 @@ namespace piScope
 	**	btw. Julian year is although not an international SI unit and differs from Sidereal year of 365.25636 SI-days at J2000.0 epoch.
 	**
 	**	Angles can be noted as radian (0<rho<2pi), degree (0<rho<360), gon/grad/grade/gradian (0<rho<400),
-	**	arcminute/minute/prime (0<rho< 21600'=360°*60min), arcsecond/second/double-prime (0<rho< 1296000"=360°*60m*60s),
+	**	arcminute/minute/prime (0<rho< 21600'=360Â°*60min), arcsecond/second/double-prime (0<rho< 1296000"=360Â°*60m*60s),
 	**	hour-angle/right-ascension (0<rho<24h) with given minute and second are fractions of hour not arcminute and arcsecond
-	**	2pi radian = 360° = 400gon = 360*60' = 360*60*60" = 24h00m00s
+	**	2pi radian = 360Â° = 400gon = 360*60' = 360*60*60" = 24h00m00s
 	**	astrological SIGN = 1/12th of circle
 	**	angular mil = 1/1000th of 1gon = 1mgon = 1/400000 of circle
 	**	revolution = 1 circle or full turn or cycle
@@ -84,7 +86,7 @@ namespace piScope
 	**	LocalRPY
 	**		angles in radian X=roll, Y=pitch, Z=yaw
 	**	J2000 (ECI) fixed on Earth's Mean Equator and Equinox at 12:00 Terrestrial Time on 1 January 2000
-	**		X axis aligned with mean equinox, Y axis 90° east on celestial equator, Z axis aligned with celestial pole
+	**		X axis aligned with mean equinox, Y axis 90Â° east on celestial equator, Z axis aligned with celestial pole
 	*/
 	typedef enum
 	{

@@ -31,6 +31,8 @@
 #ifndef _MACROS_H_
 #	define _MACROS_H_
 
+#	include "config.hpp"
+
 	/*	conversion constants
 	**
 	*/
@@ -118,7 +120,7 @@
 	**	t = Julian Centuries since J2000.0 = d / 36525
 	*/
 
-	//	J2000_OBLIQUITY= 23° 26' 21.406" obliquity - angle between equatorial plane and ecliptic
+	//	J2000_OBLIQUITY= 23Â° 26' 21.406" obliquity - angle between equatorial plane and ecliptic
 #	define J2000_OBLIQUITY LATLON_DMS2DEG(23,26,21.406)
 	//	J2000.0 epoch is exactly 12.00 noon in terrestrial time TT
 #	define J2000_EPOCH_TT (946728000)

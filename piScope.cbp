@@ -45,6 +45,7 @@
 		<Unit filename="MadgwickAHRS/MadgwickAHRS.h" />
 		<Unit filename="Makefile" />
 		<Unit filename="README.md" />
+		<Unit filename="config.h" />
 		<Unit filename="source/AstroTime.cpp" />
 		<Unit filename="source/AstroTime.hpp" />
 		<Unit filename="source/AstroVector.cpp" />
@@ -66,6 +67,7 @@
 		<Unit filename="source/TimeStamp.hpp" />
 		<Unit filename="source/Vector3D.cpp" />
 		<Unit filename="source/Vector3D.hpp" />
+		<Unit filename="source/i2c-dev.h" />
 		<Unit filename="source/test-programs.cpp" />
 		<Extensions>
 			<code_completion />

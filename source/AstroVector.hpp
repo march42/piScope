@@ -31,6 +31,7 @@
 #ifndef _ASTROVECTOR_HPP_
 #	define _ASTROVECTOR_HPP_
 
+#	include "config.hpp"
 #	include "Vector3D.hpp"
 #	include "AstroTime.hpp"
 
@@ -50,7 +51,7 @@ namespace piScope
 	**	LocalENU (east, north, up) centered/fixed on a local tangent/geodetic plane, east=x, north=y, up=z
 	**	LocalNED (north, east, down) centered/fixed on a local tangent/geodetic plane, north=x', east=y', down=z'
 	**	J2000 (ECI) fixed on Earth's Mean Equator and Equinox at 12:00 Terrestrial Time on 1 January 2000
-	**		X axis aligned with mean equinox, Y axis 90° east on celestial equator, Z axis aligned with celestial pole
+	**		X axis aligned with mean equinox, Y axis 90Â° east on celestial equator, Z axis aligned with celestial pole
 	*/
 
 	class MHAstroVector : public MHVector3D
