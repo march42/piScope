@@ -17,7 +17,6 @@
 #	include "i2c-dev.h"
 #else
 #	include <linux/i2c-dev.h>
-#	include <linux/i2c.h>
 #endif
 #include <sys/ioctl.h>
 #include <fcntl.h>
