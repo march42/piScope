@@ -55,3 +55,15 @@ MA 02110-1301 USA.
 * X is roll
 * Y is pitch
 * Z is yaw
+
+## Raspberry Pi Sense Hat
+Sense Hat add-on board has an 9DOF IMU LSM9DS1 with Gyroscope, Accelerometer and Magnetometer
+, an environmental sensor LPS25H with pressure and temperature
+, an environmental sensor HTS221 with humidity and temperature
+, a LED2472G driven 8x8 RGB565 LED matrix
+and a five button joystick.
+
+* LSM9DS1 inertial measurement sensor, i2c address 0x1c and 0x6a
+* LPS25H environmental sensor, i2c address 0x5c
+* HTS221 environmental sensor, i2c address 0x5f
+* ATTINY88 controlling LED2472G shift register and joystick, i2c address 0x46

@@ -287,9 +287,9 @@ namespace piScope
 				double compassHorizontalY = (compass1.y() * cos(ALPHA)) + (compass1.z() * sin(ALPHA));
 				double GAMMA = atan2(-1 * compassHorizontalY, compassHorizontalX);
 #				else
-				RTVector3 pose = this->ImuSensor->getMeasuredPose();	//	roll,pitch,yaw
-				double ALPHA = pose.x();	//	?pitch
-				double BETA = pose.y();		//	?roll
+				RTVector3 pose = this->ImuSensor->getMeasuredPose();	//	roll,pitch,yaw in radians
+				double ALPHA = pose.x();	//	roll
+				double BETA = pose.y();		//	pitch
 				double GAMMA = pose.z();	//	yaw
 #				endif
 				//	create vector and push to queue
