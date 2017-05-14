@@ -255,15 +255,19 @@ int main(int argc, char* argv[], char* envp[])
 #	else
 	for(int pos = 1; argc > pos; ++pos)
 	{
-		if(NULL != strstr(argv[pos],"test_i2csensor"))
+		if(0 != strncmp(argv[pos],"--test",6))
+		{
+			//	not a program call
+		}
+		else if(NULL != strstr(argv[pos],"i2csensor"))
 		{
 			test_i2csensor(argc, argv, envp);
 		}
-		else if(NULL != strstr(argv[pos],"test_vector"))
+		else if(NULL != strstr(argv[pos],"vector"))
 		{
 			test_vector(argc, argv, envp);
 		}
-		else if(NULL != strstr(argv[pos],"test_rtimulib"))
+		else if(NULL != strstr(argv[pos],"rtimulib"))
 		{
 			test_rtimulib(argc, argv, envp);
 		}

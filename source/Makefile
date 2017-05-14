@@ -5,7 +5,7 @@ LIBRARIES_CPP += LogFile.cpp Telescope.cpp
 LIBRARIES_CPP += I2Csensor.cpp IMU.cpp
 LIBRARIES_O = $(LIBRARIES_CPP:.cpp=.o)
 
-TESTPROGRAMS = test_i2csensor test_vector test_rtimulib
+TESTPROGRAMS = test test_i2csensor test_vector test_rtimulib
 
 CCFLAGS = -O3 -Wall -Wextra -Wno-unused-parameter -Werror -pthread -DDEBUG
 LDFLAGS = -O3 -s -lstdc++ -pthread -lm
@@ -34,9 +34,9 @@ endif
 .o .obj:
 	$(CC) $(LDFLAGS) $(LDEXTRA) $< $(LIBRARIES_O) -o $@
 
-all: $(LIBRARIES_O) test
+all: $(LIBRARIES_O) testprogs
 
-test: $(TESTPROGRAMS)
+testprogs: $(TESTPROGRAMS)
 
 clean:
 	-$(RM) $(LIBRARIES_O)
