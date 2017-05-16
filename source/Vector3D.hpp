@@ -85,6 +85,9 @@ namespace piScope
 	**	LocalNED (north, east, down) centered/fixed on a local tangent/geodetic plane, north=x', east=y', down=z'
 	**	LocalRPY
 	**		angles in radian X=roll, Y=pitch, Z=yaw
+	**	AziElevTilt - fixed on gravitational vector to center of mass
+	**		angles in radian X=Azimuth, Y=Elevation, Z=Tilt
+	**		range -M_PI .. angle .. +M_PI
 	**	J2000 (ECI) fixed on Earth's Mean Equator and Equinox at 12:00 Terrestrial Time on 1 January 2000
 	**		X axis aligned with mean equinox, Y axis 90° east on celestial equator, Z axis aligned with celestial pole
 	*/
@@ -97,6 +100,7 @@ namespace piScope
 		VectorType_LocalENU,
 		VectorType_LocalNED,
 		VectorType_LocalRPY,
+		VectorType_AziElevTilt,
 		VectorType_J2000,
 	}	MHVectorType_t;	/*!< Type of the Vector */
 

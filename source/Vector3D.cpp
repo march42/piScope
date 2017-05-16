@@ -97,6 +97,30 @@ namespace piScope
 			}
 			break;
 
+		case VectorType_AziElevTilt:
+			//	rotation only, so length==0
+			invalid |= (0 != this->Length);
+			invalid |= M_PI < fabs(this->X);
+			invalid |= M_PI < fabs(this->Y);
+			invalid |= M_PI < fabs(this->Z);
+			if(invalid && !checkonly)
+			{
+				this->Length = 0.0;
+				while(M_PI < fabs(this->X))
+				{
+					this->X += (0<this->X ?-2 :+2) * M_PI;
+				}
+				while(M_PI < fabs(this->Y))
+				{
+					this->Y += (0<this->Y ?-2 :+2) * M_PI;
+				}
+				while(M_PI < fabs(this->Z))
+				{
+					this->Z += (0<this->Z ?-2 :+2) * M_PI;
+				}
+			}
+			break;
+
 		case VectorType_LocalENU:
 		case VectorType_LocalNED:
 		case VectorType_LocalRPY:
@@ -271,7 +295,7 @@ namespace piScope
 	const char* MHVector3D::ToString(void) const
 	{
 		static char buffer[50] = {'\0'};
-		const char* type[] = { "3D","ECEF","LATLON","Local ENU","Local NED","Local RPY","J2000" };
+		const char* type[] = { "3D","ECEF","LATLON","Local ENU","Local NED","Local RPY","Azi/Elev/Tilt","J2000" };
 		if(VectorType_LATLON == this->Type)
 		{
 			//	clean values
@@ -306,6 +330,14 @@ namespace piScope
 			double yaw = RAD2DEG(this->Z);
 			//	print to buffer
 			snprintf(&buffer[0], sizeof(buffer), "%s [%f,%f,%f]", type[this->Type], roll,pitch,yaw);
+		}
+		else if(VectorType_AziElevTilt == this->Type)
+		{
+			double azi = RAD2DEG(this->X);
+			double elev = RAD2DEG(this->Y);
+			double tilt = RAD2DEG(this->Z);
+			//	print to buffer
+			snprintf(&buffer[0], sizeof(buffer), "%s [%f,%f,%f]", type[this->Type], azi,elev,tilt);
 		}
 		else if(0 > this->Type || (char)sizeof(type) <= this->Type)
 		{

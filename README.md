@@ -31,6 +31,7 @@ or install package libi2c-dev
 * RTIMULib2 found at https://github.com/RTIMULib/RTIMULib2
 * SOFA library created by IAU http://www.iausofa.org/tandc.html
 * Embedded Tool Kit ETK from https://github.com/supercamel/EmbeddedToolKit
+for documentation visit http://www.camelsoftware.com/etk/html/index.html
 
 ## Status und ToDo
 - Der 9DOF liefert immer etwas sinnfreie Werte, aber schon grob mit richtiger Richtung.

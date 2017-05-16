@@ -56,12 +56,12 @@
 	**	if I2C tools package and corresponding i2c-dev.h is installed
 	**	otherwise the local copy of i2c-dev.h is used.
 	*/
-#	define USE_LINUX_I2CDEV true
+//#	define USE_LINUX_I2CDEV true
 
 	/*	USE_MADGWICK_AHRS
 	**	use Madgwick AHRS code for sensor filtering and fusion
 	*/
-#	define USE_MADGWICK_AHRS true
+//#	define USE_MADGWICK_AHRS true
 
 	/*	USE_RTIMULIB
 	**	use RTIMULib to interface IMU sensor
@@ -70,7 +70,7 @@
 	/*	CALCULATE_ORIENTATION
 	**	use own calculation routine and maths, instead of relying on RTIMULib
 	*/
-#	define CALCULATE_ORIENTATION true
+//#	define CALCULATE_ORIENTATION true
 	/*	DONT_OPTIMIZE_TIMESTAMP
 	**	rely on RTIMULib time stamp in micro seconds and just divide by 1000000
 	*/

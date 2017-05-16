@@ -41,8 +41,7 @@ testprogs: $(TESTPROGRAMS)
 
 clean:
 	-$(RM) $(LIBRARIES_O)
-	-$(RM) test.o test_i2csensor.o test_vector.o test_rtimulib.o
-	-$(RM) test test_i2csensor test_vector test_rtimulib
+	-$(RM) $(TESTPROGRAMS) $(patsubst %,%.o,$(TESTPROGRAMS))
 
 dist-clean: clean
 	-$(RM) *.o *.ini *.log
