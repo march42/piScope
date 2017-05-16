@@ -39,17 +39,15 @@ namespace piScope
 {
 
 	MHLogFile::MHLogFile()
+		: LOGFILE(NULL), LOGLEVEL(3), FILENAME(NULL), MAXSIZE(-1)
 	{
 		//	prepare log
-		this->LOGFILE = NULL;
-		this->SetLogLevel(3);
 		this->SetLogName(NULL);
 	}
 	MHLogFile::MHLogFile(const char* file, int level, const char* name)
+		: LOGFILE(NULL), LOGLEVEL(level), FILENAME(NULL), MAXSIZE(-1)
 	{
 		//	prepare log
-		this->LOGFILE = NULL;
-		this->SetLogLevel(level);
 		this->SetLogName(name);
 		this->SetLogFile(file);
 	}
@@ -82,7 +80,8 @@ namespace piScope
 
 	FILE* MHLogFile::SetLogFile(const char* file)
 	{
-		this->LOGFILE = fopen((NULL==file ?"logfile.txt" :file),"a");
+		this->FILENAME = (NULL==file ?"logfile.txt" :file);
+		this->LOGFILE = fopen(this->FILENAME,"a");
 		return(this->LOGFILE);
 	}
 
@@ -98,6 +97,11 @@ namespace piScope
 		this->LOGLEVEL = level;
 		return(this->LOGLEVEL);
 	}
+	long int MHLogFile::SetMaxSize(long int maxsize)
+	{
+		this->MAXSIZE = maxsize;
+		return(this->MAXSIZE);
+	}
 
 	const char* MHLogFile::SetLogName(const char* name)
 	{
@@ -112,9 +116,35 @@ namespace piScope
 		return(&this->NAME[0]);
 	}
 
-	int MHLogFile::printLog(int level, const char * format, ... ) const
+	void MHLogFile::rotateLog(void)
+	{
+		if(NULL != this->LOGFILE)
+		{
+			long int fsize = ftell(this->LOGFILE);
+			/*rewind(this->LOGFILE);	doesnt work why ever */
+			//	create new filename
+			char* moveFN = new char[FILENAME_MAX];
+			snprintf(moveFN,FILENAME_MAX, "%s.old", this->FILENAME);
+			//	remove old previously rotated file
+			remove(moveFN);
+			//	close file and rename
+			fclose(this->LOGFILE);
+			rename(this->FILENAME, moveFN);
+			//	reopen file with old name
+			this->SetLogFile(this->FILENAME);
+			//	release buffer
+			delete(moveFN);
+			//	mark rotation (level=-1, so almost always written to file)
+			this->printLog(-1, "log file rotated after %d bytes\n", fsize);
+		}
+	}
+	int MHLogFile::printLog(int level, const char * format, ... )
 	{
 		int written = 0;
+		if(NULL != this->LOGFILE && 0 < this->MAXSIZE && this->MAXSIZE < ftell(this->LOGFILE))
+		{
+			this->rotateLog();
+		}
 		if(level <= this->LOGLEVEL)
 		{
 			va_list args;

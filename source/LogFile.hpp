@@ -45,6 +45,8 @@ namespace piScope
 		char NAME[128];	/*!< NAME to use for log file output clarification */
 		FILE* LOGFILE;	/*!< the log file handle */
 		int LOGLEVEL;	/*!< the current highest level to filter output to log file */
+		const char* FILENAME;	/*!< filename given on open */
+		long int MAXSIZE;	/*!< maximum file size, size<=0 to disable rotation */
 
 	protected:	/* protected members are accessible from the same class or "friends" and derived classes */
 		//	internal methods
@@ -60,9 +62,11 @@ namespace piScope
 		//	configuration methods
 		FILE* SetLogFile(const char* file=NULL);	/*!< set new log file */
 		int SetLogLevel(int level);	/*!< set new filter level */
+		long int SetMaxSize(long int maxsize);	/*!< set new maximum file size */
 		const char* SetLogName(const char* name);	/*!< set new clarification name */
 		//	output methods
-		int printLog(int level, const char * format, ... ) const;	/*!< special printf function for log file */
+		void rotateLog(void);	/*!< set new clarification name */
+		int printLog(int level, const char * format, ... );	/*!< special printf function for log file */
 	};
 
 };
