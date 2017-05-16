@@ -1,0 +1,3 @@
+[submodule "EmbeddedToolKit"]
+	path = EmbeddedToolKit
+	url = https://github.com/supercamel/EmbeddedToolKit

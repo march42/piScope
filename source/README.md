@@ -39,6 +39,7 @@ MA 02110-1301 USA.
 - [x] add statistical locking to orientation (the more data the more precision
 - [ ] correct angles - most probably misinterpretation of radian and degree
 - [ ] dont rely on RTIMULib-calculatedPose use own trigonometric
+- [ ] use Embedded Tool Kit ETK from https://github.com/supercamel/EmbeddedToolKit
 
 ## general definitions
 ### angles in MHAstroVector type=LocalRPY
